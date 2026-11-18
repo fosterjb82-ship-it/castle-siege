@@ -4,7 +4,7 @@ import { canUseFallback, cardPlayError, knightAvailable } from '../siege';
 import type { AbilityPlan, Action, CardPlanInput, CharacterId, GameState, Lane } from '../types';
 import { CHARACTERS, LANES } from '../types';
 import {
-  buildingsOf, countBuilding, cornersCovering, defendersIn, hasBuilding, mainCampLane, sumStrength, troopsAt,
+  buildingsOf, countBuilding, cornersCovering, defendersIn, garrisonRoom, hasBuilding, mainCampLane, sumStrength, troopsAt,
 } from '../util';
 import { aiRng, laneThreat, lanesByThreat } from './common';
 
@@ -25,7 +25,7 @@ function scoreBuild(s: GameState, a: Extract<Action, { type: 'build' }>): number
     case 'quarry': return prod < 5 && !s.finalBuildRound ? (early ? 7 : 3) - countBuilding(s, 'defender', 'quarry') : -1;
     case 'market': return prod < 5 && !s.finalBuildRound ? (early ? 7.5 : 3) - countBuilding(s, 'defender', 'market') * 1.5 : -1;
     case 'lumber_mill': return prod < 5 && !s.finalBuildRound ? (early ? 6 : 2) - countBuilding(s, 'defender', 'lumber_mill') * 2 : -1;
-    case 'barracks': return hasBuilding(s, 'defender', 'barracks') ? -1 : s.round >= 2 ? 7 : 4;
+    case 'barracks': return hasBuilding(s, 'defender', 'barracks') ? -1 : s.round >= 2 || garrisonRoom(s) <= 1 ? 7 : 4;
     case 'garrison_hall': return s.round >= 4 ? 6 : 2;
     case 'weaponsmith': {
       const n = s.troops.filter((t) => t.side === 'defender' && t.type === a.troopType).length;
@@ -83,7 +83,10 @@ function scoreAction(s: GameState, actor: CharacterId, a: Action, rnd: () => num
       const laneBonus = a.lane === lanes[0] ? 1.2 : a.lane === lanes[1] ? 0.6 : 0;
       const thin = defendersIn(s, a.lane).length === 0 ? 1 : 0;
       const late = s.round >= 4 || s.finalBuildRound ? 1.5 : 0;
-      return troopValue(a.troop) + laneBonus + thin + late - 2 + noise;
+      // With little room left in the garrison, spend it on quality troops.
+      const room = garrisonRoom(s);
+      const quality = room <= 3 && a.troop === 'militia' ? -2.5 : 0;
+      return troopValue(a.troop) + laneBonus + thin + late + quality - 2 + noise;
     }
     case 'draft': {
       const base = { tactics: 4.6, fortifications: 5, garrison: 5 }[a.deck] ?? 3;
@@ -167,7 +170,13 @@ function laneForCard(s: GameState, actor: CharacterId, cardId: string): { lane: 
     value = 1;
   } else {
     pickLane = legal.sort((a, b) => rank(b) - rank(a))[0];
-    const amt = c.effects.reduce((a, e) => a + (e.amount ?? 0) + (e.count ?? 0) * 1.5, 0);
+    const amt = c.effects.reduce((a, e) => {
+      if (e.type === 'deployTroops') {
+        const arrive = Math.min(e.count, e.levy ? s.population ?? 0 : garrisonRoom(s));
+        return a + arrive * 1.5;
+      }
+      return a + (e.amount ?? 0);
+    }, 0);
     value = amt + rank(pickLane) * 0.8;
   }
   return { lane: pickLane, value };

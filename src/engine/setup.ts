@@ -72,6 +72,7 @@ export function createGame(opts: NewGameOptions = {}): GameState {
     siegeDecks: empty(),
     hands: empty(),
     intel: [],
+    population: RULES.garrison.startingPopulation,
     turn: { done: [], current: null, actionsLeft: 0, warlordActionsLeft: 0, abilityUsed: {}, returnStep: null },
     pendingDraft: null,
     harassed: [],

@@ -5,7 +5,7 @@ import { CHARACTERS, DEFENDER_RES, LANES, WARLORD_RES } from './types';
 import {
   addRes, addTroop, adjacent, canAfford, cap, defendersIn, discount, fail, fmtRes, hasBuilding,
   incomeFor, log, mainCampLane, overSupplied, pay, removeTroop, sideOf, sumStrength, supplyRating,
-  troopsAt, uid, warlordTroopCount, weakest, countBuilding,
+  troopsAt, uid, warlordTroopCount, weakest, countBuilding, garrisonRoom, garrisonCapacity, defenderTroopCount,
 } from './util';
 
 const ACTOR_NAME = (a: Actor) => (a === 'warlord' ? 'Warlord' : CHARACTER_DEFS[a].name);
@@ -305,6 +305,8 @@ export function doTrain(s: GameState, a: Extract<Action, { type: 'train' }>) {
   if (t.side !== 'defender') fail(`${t.name} is not a defender troop`);
   if (t.requires && !hasBuilding(s, 'defender', t.requires)) fail(`${t.name} requires a ${building(t.requires).name}`);
   if (!LANES.includes(a.lane)) fail('Choose a bailey');
+  if (garrisonRoom(s) <= 0)
+    fail(`The garrison is full (${defenderTroopCount(s)}/${garrisonCapacity(s)}). Build a Barracks to house more troops.`);
   const cost = trainCost(a.actor, a.troop);
   pay(s.stock.defender, cost, t.name);
   addTroop(s, 'defender', a.troop, a.lane, 'bailey');

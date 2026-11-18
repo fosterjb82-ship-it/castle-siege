@@ -257,11 +257,12 @@
       {
         "type": "deployTroops",
         "troop": "militia",
-        "count": 2
+        "count": 2,
+        "levy": true
       }
     ],
     "copies": 3,
-    "text": "Deploy 2 Militia in this bailey."
+    "text": "Turn 2 townsfolk into Militia in this bailey. Uses Population instead of Garrison Capacity, so it can exceed the cap."
   },
   {
     "id": "archer_company",
@@ -279,7 +280,7 @@
       }
     ],
     "copies": 3,
-    "text": "Deploy 2 Archers in this bailey (they fire this round)."
+    "text": "Deploy 2 Archers in this bailey (they fire this round). Only arrives if there is Garrison Capacity."
   },
   {
     "id": "men_at_arms_detachment",
@@ -297,7 +298,7 @@
       }
     ],
     "copies": 3,
-    "text": "Deploy 1 Men-at-arms in this bailey."
+    "text": "Deploy 1 Men-at-arms in this bailey. Only arrives if there is Garrison Capacity."
   },
   {
     "id": "knights_of_the_keep",
@@ -315,7 +316,7 @@
       }
     ],
     "copies": 2,
-    "text": "Deploy 1 Knights of the Keep in this bailey (requires Garrison Hall).",
+    "text": "Deploy 1 Knights of the Keep in this bailey (requires Garrison Hall). Only arrives if there is Garrison Capacity.",
     "requires": "garrison_hall"
   }
 ]

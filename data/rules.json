@@ -149,5 +149,9 @@
   "casualties": {
     "baileyPerMargin": 3
   },
-  "breachDeployIntoBailey": true
+  "breachDeployIntoBailey": true,
+  "garrison": {
+    "baseCapacity": 6,
+    "startingPopulation": 6
+  }
 }

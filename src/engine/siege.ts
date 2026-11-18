@@ -7,7 +7,7 @@ import { CHARACTERS, LANES, RESOLVE_STEPS } from './types';
 import {
   addTroop, adjacent, baileyStrength, buildingsOf, cornersCovering, defendersIn, fail, hasBuilding, knightIn,
   laneBuildingAttack, log, removeTroop, sideOf, sumStrength, towerDefense, troopStrength, troopsAt, uid, weakest,
-  incomeFor, addRes, fmtRes,
+  incomeFor, addRes, fmtRes, garrisonRoom,
 } from './util';
 
 const NAME = (a: Actor) => (a === 'warlord' ? 'Warlord' : CHARACTER_DEFS[a].name);
@@ -414,8 +414,19 @@ function deploy(s: GameState, p: SiegePlay, speed: string) {
     const side = sideOf(p.actor);
     const throughBreach = side === 'warlord' && s.breached[p.lane] && (RULES as any).breachDeployIntoBailey;
     const zone = side === 'defender' || throughBreach ? 'bailey' : 'approach';
-    for (let i = 0; i < e.count; i++) addTroop(s, side, e.troop, p.lane, zone);
-    log(s, `${card(p.cardId).name}: ${e.count} ${troopDef(e.troop).name} join the ${laneName(p.lane)} ${zone}.`);
+    let n = e.count;
+    let note = '';
+    if (side === 'defender') {
+      // Levies come from the townsfolk (Population) and ignore the cap; other reinforcements need room.
+      const pop = s.population ?? 0;
+      const room = e.levy ? pop : garrisonRoom(s);
+      n = Math.min(e.count, room);
+      if (e.levy) s.population = pop - n;
+      if (n < e.count) note = e.levy ? ' (the town has no more able-bodied folk)' : ' (the garrison is full)';
+      if (e.levy && n) note += ` — ${s.population} townsfolk left`;
+    }
+    for (let i = 0; i < n; i++) addTroop(s, side, e.troop, p.lane, zone);
+    log(s, `${card(p.cardId).name}: ${n} ${troopDef(e.troop).name} join the ${laneName(p.lane)} ${zone}${note}.`);
   }
 }
 

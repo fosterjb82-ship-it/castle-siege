@@ -26,6 +26,14 @@ The spec (`docs/GDD.md`, v0.1) leaves some details open. This file lists every p
 - **[Beta change] The Warlord has base income** (`rules.baseIncome.warlord`: +1 Supplies, +1 Timber, +1 Gold). In the spec the Warlord has no source of Gold or Timber except Foraging Camps, yet Gold pays for Supply Lines, War Camps, Tactics drafts and Command Tents.
 - The over-supply penalty (−1 Strength to every Warlord troop) is computed live, any time troops exceed the Supply Rating, including troops deployed during the siege.
 
+## Garrison Capacity and Population (added after the beta build)
+- **[Beta change] Defender troops are capped by Garrison Capacity**, mirroring the Warlord's Supply Rating. A castle under siege can strengthen its defenses but can't grow its army much.
+  - The Keep houses `rules.garrison.baseCapacity` (6) troops. A Barracks adds 3 (`garrisonCapacity` in `buildings.json`); a Garrison Hall replaces that with 5. The Knight doesn't count.
+  - Unlike Supply Rating this is a **hard cap**: Train is refused when the garrison is full.
+  - During the siege, Men-at-arms Detachment, Archer Company and Knights of the Keep deploy only as many troops as there is room for. The rest don't arrive.
+- **[Beta change] Population: the townsfolk.** The castle starts with `rules.garrison.startingPopulation` (6). **Militia Levy** turns townsfolk into Militia, using Population instead of capacity, so a levy can push the garrison over the cap. Once the town has no able-bodied folk left, levies raise nothing. Population doesn't grow.
+- Troops already over the cap (from levies) stay; you just can't train more until losses bring the count under the cap.
+
 ## War Horns (§9)
 - The AI also sounds the horns by round `rules.ai.hornsByRound` (6). The spec's trigger (army Strength ≥ defender Strength + 6) almost never fires, because defenders out-build the Warlord.
 

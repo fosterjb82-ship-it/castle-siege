@@ -26,7 +26,8 @@ export function StockPanels({ s, viewer }: { s: GameState; viewer: Viewer }) {
         <h3 className="def">Defenders' stockpile</h3>
         <ResTable stock={s.stock.defender} income={util.incomeFor(s, 'defender')} />
         <div className="section kv" style={{ fontSize: 12 }}>
-          <span>Troops</span><span>{s.troops.filter((t) => t.side === 'defender').length} (Str {util.totalDefenderStrength(s)})</span>
+          <span>Garrison</span><span>{util.defenderTroopCount(s)} / {util.garrisonCapacity(s)} troops (Str {util.totalDefenderStrength(s)})</span>
+          <span>Population</span><span title="Townsfolk who can be levied as Militia beyond the cap (Militia Levy)">{s.population ?? 0} townsfolk</span>
           <span>Knight</span><span>{s.knight.downUntilSiegeRound !== null ? 'recovering' : `HP ${s.knight.hp} · ${s.knight.lane ? `${s.knight.lane} bailey` : 'Keep'}`}</span>
         </div>
         <div className="section" style={{ fontSize: 12 }}>

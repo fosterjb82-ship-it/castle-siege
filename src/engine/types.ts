@@ -61,6 +61,7 @@ export interface BuildingDef {
   chooseTroopType?: boolean;
   firstInMainCampLane?: boolean;
   handSizeBonus?: number;
+  garrisonCapacity?: number;
   indestructible?: boolean;
   text: string;
 }
@@ -252,6 +253,8 @@ export interface GameState {
   siegeDecks: Record<Actor, string[]>;
   hands: Record<Actor, string[]>;
   intel: { side: Side; text: string; round: number }[];
+  /** Townsfolk who can still be levied as Militia beyond the Garrison Capacity. */
+  population: number;
   turn: TurnState;
   pendingDraft: { actor: Actor; deck: string; cards: string[] } | null;
   harassed: number[];

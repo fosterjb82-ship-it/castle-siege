@@ -183,6 +183,7 @@ export function TurnPanel({ s, dispatch, selected, setSelected }: PanelProps) {
 
       <div className="section">
         <h3>{isW ? 'Recruit' : 'Train'}</h3>
+        {!isW && <div className="muted" style={{ fontSize: 12 }}>Garrison {util.defenderTroopCount(s)}/{util.garrisonCapacity(s)}{util.garrisonRoom(s) === 0 ? ' — full: build a Barracks or Garrison Hall for more room' : ''}</div>}
         <div className="row">
           <select value={troop} onChange={(e) => setTroop(e.target.value)}>
             {trainList.map((t) => <option key={t.id} value={t.id}>{t.name} (Str {t.strength}, HP {t.hp})</option>)}

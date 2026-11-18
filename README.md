@@ -64,7 +64,7 @@ The report includes the defender win rate, the average War Horns round, how many
 ## How to play (short)
 
 1. **Setup.** Defenders secretly place 3 Militia and the Knight. The Warlord secretly places the Main Siege Camp and 3 Footmen. Then everything is revealed.
-2. **Build rounds.** Collect income, then the team picks which character goes next. Each character takes 2 actions, and the Warlord responds with 1 action after each character's turn. Click a slot on the board to see what you can build there.
+2. **Build rounds.** Collect income, then the team picks which character goes next. Defender troops are capped by Garrison Capacity (the Keep plus a Barracks or Garrison Hall). Militia Levy can raise townsfolk beyond the cap while the castle's Population lasts. Each character takes 2 actions, and the Warlord responds with 1 action after each character's turn. Click a slot on the board to see what you can build there.
 3. **War Horns.** The Warlord may sound them from round 4; they sound automatically after round 8. Defenders then get one final build round, and the Warlord makes no moves in it.
 4. **Siege (5 rounds).** Each character plays 1 card face down onto a lane, plus an optional character ability and hidden troop moves. The Warlord plays 3 cards. Everything is revealed at once and resolves in order: Scouting → Ranged → Engines → Melee → Recovery.
 5. **Winning.** Defenders win if the Keep stands after the last round. The Warlord wins the moment the Keep falls.

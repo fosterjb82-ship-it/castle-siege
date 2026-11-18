@@ -134,6 +134,23 @@ export function overSupplied(s: GameState): boolean {
   return warlordTroopCount(s) > supplyRating(s);
 }
 
+// ---------- Garrison (defender troop cap) ----------
+
+/** Defender troops the castle can house. The Knight doesn't count. */
+export function garrisonCapacity(s: GameState): number {
+  let cap = RULES.garrison.baseCapacity;
+  for (const x of buildingsOf(s, 'defender')) cap += building(x.b.buildingId).garrisonCapacity ?? 0;
+  return cap;
+}
+
+export function defenderTroopCount(s: GameState): number {
+  return s.troops.filter((t) => t.side === 'defender').length;
+}
+
+export function garrisonRoom(s: GameState): number {
+  return Math.max(0, garrisonCapacity(s) - defenderTroopCount(s));
+}
+
 // ---------- Troops ----------
 
 export function troopsAt(s: GameState, side: Side, lane: Lane, zone: 'bailey' | 'approach'): Troop[] {

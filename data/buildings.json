@@ -1,26 +1,337 @@
 [
-  { "id": "basic_wall", "side": "defender", "name": "Basic Wall", "slot": "wall", "category": "wall", "cost": {}, "buildable": false, "structure": { "defense": 2, "hp": 6 }, "text": "Defense 2, HP 6." },
-  { "id": "stone_wall", "side": "defender", "name": "Fortified Stone Wall", "slot": "wall", "category": "wall", "upgradeOf": "basic_wall", "cost": { "stone": 3 }, "structure": { "defense": 4, "hp": 10, "ramReduction": 1 }, "text": "Wall Defense 4, HP 10; Rams deal -1 damage." },
-  { "id": "wooden_gate", "side": "defender", "name": "Wooden Gate", "slot": "gate", "category": "gate", "cost": {}, "buildable": false, "structure": { "defense": 1, "hp": 4 }, "text": "Defense 1, HP 4." },
-  { "id": "ironbound_gate", "side": "defender", "name": "Iron-bound Gate", "slot": "gate", "category": "gate", "upgradeOf": "wooden_gate", "cost": { "stone": 2, "gold": 2 }, "structure": { "defense": 2, "hp": 6 }, "text": "Gate Defense 2, HP 6." },
-  { "id": "gatehouse", "side": "defender", "name": "Gatehouse", "slot": "gate", "category": "gate", "upgradeOf": "ironbound_gate", "cost": { "stone": 3, "wood": 1 }, "structure": { "defense": 3, "hp": 8, "murderHoles": 1 }, "text": "Gate Defense 3, HP 8; Murder Holes: Ranged 1 damage to a troop attacking this gate." },
-  { "id": "quarry", "side": "defender", "name": "Quarry", "slot": "bailey", "category": "production", "cost": { "wood": 2 }, "produces": { "stone": 2 }, "text": "+2 Stone per Collect." },
-  { "id": "lumber_mill", "side": "defender", "name": "Lumber Mill", "slot": "bailey", "category": "production", "cost": { "gold": 2 }, "produces": { "wood": 2 }, "text": "+2 Wood per Collect." },
-  { "id": "market", "side": "defender", "name": "Market", "slot": "bailey", "category": "production", "cost": { "wood": 2, "stone": 1 }, "produces": { "gold": 2 }, "text": "+2 Gold per Collect." },
-  { "id": "barracks", "side": "defender", "name": "Barracks", "slot": "bailey", "category": "military", "cost": { "wood": 2, "gold": 2 }, "text": "Unlocks the Garrison deck, Men-at-arms and Archers." },
-  { "id": "garrison_hall", "side": "defender", "name": "Garrison Hall", "slot": "bailey", "category": "military", "upgradeOf": "barracks", "cost": { "stone": 3, "gold": 2 }, "troopStrengthBonus": 1, "text": "Counts as a Barracks. All defender troops +1 Strength; unlocks Knights of the Keep." },
-  { "id": "weaponsmith", "side": "defender", "name": "Weaponsmith", "slot": "bailey", "category": "military", "cost": { "stone": 2, "gold": 2 }, "chooseTroopType": true, "text": "Choose one troop type when built: that type gets +1 Strength." },
-  { "id": "arrow_tower", "side": "defender", "name": "Arrow Tower", "slot": "tower", "category": "tower", "cost": { "stone": 2, "wood": 1 }, "tower": { "defense": 1, "shots": 1, "hp": 4 }, "text": "+1 Defense to both adjacent lanes; Ranged: 1 damage to one attacking troop in each adjacent lane." },
-  { "id": "stone_tower", "side": "defender", "name": "Stone Tower", "slot": "tower", "category": "tower", "upgradeOf": "arrow_tower", "cost": { "stone": 3 }, "tower": { "defense": 2, "shots": 2, "hp": 6 }, "text": "+2 Defense to both adjacent lanes; Ranged: 1 damage x2 in each adjacent lane." },
-  { "id": "moat", "side": "defender", "name": "Moat", "slot": "moat", "category": "moat", "cost": { "gold": 3 }, "text": "Rams and Siege Towers can't attack this lane unless a Bridge is played." },
-
-  { "id": "main_siege_camp", "side": "warlord", "name": "Main Siege Camp", "slot": "approach", "category": "camp", "cost": {}, "buildable": false, "indestructible": true, "produces": { "supplies": 2 }, "supplyRating": 3, "laneAttack": 1, "recruitHere": true, "text": "+2 Supplies per Collect; +3 Supply Rating; its lane +1 attack. Can't be destroyed." },
-  { "id": "siege_camp", "side": "warlord", "name": "Siege Camp", "slot": "approach", "category": "camp", "cost": { "supplies": 3 }, "supplyRating": 2, "recruitHere": true, "recruitDiscount": { "supplies": 1 }, "text": "+2 Supply Rating; troops recruited here cost 1 less Supplies." },
-  { "id": "supply_line", "side": "warlord", "name": "Supply Line", "slot": "approach", "category": "production", "cost": { "gold": 2 }, "produces": { "supplies": 2 }, "supplyRating": 1, "text": "+2 Supplies per Collect; +1 Supply Rating; can be raided." },
-  { "id": "foraging_camp", "side": "warlord", "name": "Foraging Camp", "slot": "approach", "category": "production", "cost": { "supplies": 1 }, "produces": { "supplies": 1, "timber": 1 }, "text": "+1 Supplies, +1 Timber per Collect." },
-  { "id": "war_camp", "side": "warlord", "name": "War Camp", "slot": "approach", "category": "military", "cost": { "supplies": 2, "gold": 2 }, "recruitHere": true, "text": "Unlocks the Troop deck, Raiders and Crossbowmen." },
-  { "id": "veteran_camp", "side": "warlord", "name": "Veteran Camp", "slot": "approach", "category": "military", "upgradeOf": "war_camp", "cost": { "supplies": 3, "gold": 2 }, "recruitHere": true, "text": "Counts as a War Camp. Unlocks Veterans." },
-  { "id": "siege_workshop", "side": "warlord", "name": "Siege Workshop", "slot": "approach", "category": "military", "cost": { "timber": 3 }, "firstInMainCampLane": true, "text": "Unlocks the Siege Engine deck. The first one must be in the Main Siege Camp's approach." },
-  { "id": "staging_ground", "side": "warlord", "name": "Staging Ground", "slot": "approach", "category": "military", "cost": { "supplies": 2 }, "laneAttack": 1, "text": "Its lane +1 attack. Visible to defenders (feint potential)." },
-  { "id": "command_tent", "side": "warlord", "name": "Command Tent", "slot": "approach", "category": "military", "cost": { "gold": 2 }, "handSizeBonus": 1, "text": "Warlord siege hand size +1." }
+  {
+    "id": "basic_wall",
+    "side": "defender",
+    "name": "Basic Wall",
+    "slot": "wall",
+    "category": "wall",
+    "cost": {},
+    "buildable": false,
+    "structure": {
+      "defense": 2,
+      "hp": 6
+    },
+    "text": "Defense 2, HP 6."
+  },
+  {
+    "id": "stone_wall",
+    "side": "defender",
+    "name": "Fortified Stone Wall",
+    "slot": "wall",
+    "category": "wall",
+    "upgradeOf": "basic_wall",
+    "cost": {
+      "stone": 3
+    },
+    "structure": {
+      "defense": 4,
+      "hp": 10,
+      "ramReduction": 1
+    },
+    "text": "Wall Defense 4, HP 10; Rams deal -1 damage."
+  },
+  {
+    "id": "wooden_gate",
+    "side": "defender",
+    "name": "Wooden Gate",
+    "slot": "gate",
+    "category": "gate",
+    "cost": {},
+    "buildable": false,
+    "structure": {
+      "defense": 1,
+      "hp": 4
+    },
+    "text": "Defense 1, HP 4."
+  },
+  {
+    "id": "ironbound_gate",
+    "side": "defender",
+    "name": "Iron-bound Gate",
+    "slot": "gate",
+    "category": "gate",
+    "upgradeOf": "wooden_gate",
+    "cost": {
+      "stone": 2,
+      "gold": 2
+    },
+    "structure": {
+      "defense": 2,
+      "hp": 6
+    },
+    "text": "Gate Defense 2, HP 6."
+  },
+  {
+    "id": "gatehouse",
+    "side": "defender",
+    "name": "Gatehouse",
+    "slot": "gate",
+    "category": "gate",
+    "upgradeOf": "ironbound_gate",
+    "cost": {
+      "stone": 3,
+      "wood": 1
+    },
+    "structure": {
+      "defense": 3,
+      "hp": 8,
+      "murderHoles": 1
+    },
+    "text": "Gate Defense 3, HP 8; Murder Holes: Ranged 1 damage to a troop attacking this gate."
+  },
+  {
+    "id": "quarry",
+    "side": "defender",
+    "name": "Quarry",
+    "slot": "bailey",
+    "category": "production",
+    "cost": {
+      "wood": 2
+    },
+    "produces": {
+      "stone": 2
+    },
+    "text": "+2 Stone per Collect."
+  },
+  {
+    "id": "lumber_mill",
+    "side": "defender",
+    "name": "Lumber Mill",
+    "slot": "bailey",
+    "category": "production",
+    "cost": {
+      "gold": 2
+    },
+    "produces": {
+      "wood": 2
+    },
+    "text": "+2 Wood per Collect."
+  },
+  {
+    "id": "market",
+    "side": "defender",
+    "name": "Market",
+    "slot": "bailey",
+    "category": "production",
+    "cost": {
+      "wood": 2,
+      "stone": 1
+    },
+    "produces": {
+      "gold": 2
+    },
+    "text": "+2 Gold per Collect."
+  },
+  {
+    "id": "barracks",
+    "side": "defender",
+    "name": "Barracks",
+    "slot": "bailey",
+    "category": "military",
+    "cost": {
+      "wood": 2,
+      "gold": 2
+    },
+    "text": "Houses 3 more troops (Garrison Capacity +3). Unlocks the Garrison deck, Men-at-arms and Archers.",
+    "garrisonCapacity": 3
+  },
+  {
+    "id": "garrison_hall",
+    "side": "defender",
+    "name": "Garrison Hall",
+    "slot": "bailey",
+    "category": "military",
+    "upgradeOf": "barracks",
+    "cost": {
+      "stone": 3,
+      "gold": 2
+    },
+    "troopStrengthBonus": 1,
+    "text": "Counts as a Barracks and houses 5 troops (instead of 3). All defender troops +1 Strength; unlocks Knights of the Keep.",
+    "garrisonCapacity": 5
+  },
+  {
+    "id": "weaponsmith",
+    "side": "defender",
+    "name": "Weaponsmith",
+    "slot": "bailey",
+    "category": "military",
+    "cost": {
+      "stone": 2,
+      "gold": 2
+    },
+    "chooseTroopType": true,
+    "text": "Choose one troop type when built: that type gets +1 Strength."
+  },
+  {
+    "id": "arrow_tower",
+    "side": "defender",
+    "name": "Arrow Tower",
+    "slot": "tower",
+    "category": "tower",
+    "cost": {
+      "stone": 2,
+      "wood": 1
+    },
+    "tower": {
+      "defense": 1,
+      "shots": 1,
+      "hp": 4
+    },
+    "text": "+1 Defense to both adjacent lanes; Ranged: 1 damage to one attacking troop in each adjacent lane."
+  },
+  {
+    "id": "stone_tower",
+    "side": "defender",
+    "name": "Stone Tower",
+    "slot": "tower",
+    "category": "tower",
+    "upgradeOf": "arrow_tower",
+    "cost": {
+      "stone": 3
+    },
+    "tower": {
+      "defense": 2,
+      "shots": 2,
+      "hp": 6
+    },
+    "text": "+2 Defense to both adjacent lanes; Ranged: 1 damage x2 in each adjacent lane."
+  },
+  {
+    "id": "moat",
+    "side": "defender",
+    "name": "Moat",
+    "slot": "moat",
+    "category": "moat",
+    "cost": {
+      "gold": 3
+    },
+    "text": "Rams and Siege Towers can't attack this lane unless a Bridge is played."
+  },
+  {
+    "id": "main_siege_camp",
+    "side": "warlord",
+    "name": "Main Siege Camp",
+    "slot": "approach",
+    "category": "camp",
+    "cost": {},
+    "buildable": false,
+    "indestructible": true,
+    "produces": {
+      "supplies": 2
+    },
+    "supplyRating": 3,
+    "laneAttack": 1,
+    "recruitHere": true,
+    "text": "+2 Supplies per Collect; +3 Supply Rating; its lane +1 attack. Can't be destroyed."
+  },
+  {
+    "id": "siege_camp",
+    "side": "warlord",
+    "name": "Siege Camp",
+    "slot": "approach",
+    "category": "camp",
+    "cost": {
+      "supplies": 3
+    },
+    "supplyRating": 2,
+    "recruitHere": true,
+    "recruitDiscount": {
+      "supplies": 1
+    },
+    "text": "+2 Supply Rating; troops recruited here cost 1 less Supplies."
+  },
+  {
+    "id": "supply_line",
+    "side": "warlord",
+    "name": "Supply Line",
+    "slot": "approach",
+    "category": "production",
+    "cost": {
+      "gold": 2
+    },
+    "produces": {
+      "supplies": 2
+    },
+    "supplyRating": 1,
+    "text": "+2 Supplies per Collect; +1 Supply Rating; can be raided."
+  },
+  {
+    "id": "foraging_camp",
+    "side": "warlord",
+    "name": "Foraging Camp",
+    "slot": "approach",
+    "category": "production",
+    "cost": {
+      "supplies": 1
+    },
+    "produces": {
+      "supplies": 1,
+      "timber": 1
+    },
+    "text": "+1 Supplies, +1 Timber per Collect."
+  },
+  {
+    "id": "war_camp",
+    "side": "warlord",
+    "name": "War Camp",
+    "slot": "approach",
+    "category": "military",
+    "cost": {
+      "supplies": 2,
+      "gold": 2
+    },
+    "recruitHere": true,
+    "text": "Unlocks the Troop deck, Raiders and Crossbowmen."
+  },
+  {
+    "id": "veteran_camp",
+    "side": "warlord",
+    "name": "Veteran Camp",
+    "slot": "approach",
+    "category": "military",
+    "upgradeOf": "war_camp",
+    "cost": {
+      "supplies": 3,
+      "gold": 2
+    },
+    "recruitHere": true,
+    "text": "Counts as a War Camp. Unlocks Veterans."
+  },
+  {
+    "id": "siege_workshop",
+    "side": "warlord",
+    "name": "Siege Workshop",
+    "slot": "approach",
+    "category": "military",
+    "cost": {
+      "timber": 3
+    },
+    "firstInMainCampLane": true,
+    "text": "Unlocks the Siege Engine deck. The first one must be in the Main Siege Camp's approach."
+  },
+  {
+    "id": "staging_ground",
+    "side": "warlord",
+    "name": "Staging Ground",
+    "slot": "approach",
+    "category": "military",
+    "cost": {
+      "supplies": 2
+    },
+    "laneAttack": 1,
+    "text": "Its lane +1 attack. Visible to defenders (feint potential)."
+  },
+  {
+    "id": "command_tent",
+    "side": "warlord",
+    "name": "Command Tent",
+    "slot": "approach",
+    "category": "military",
+    "cost": {
+      "gold": 2
+    },
+    "handSizeBonus": 1,
+    "text": "Warlord siege hand size +1."
+  }
 ]

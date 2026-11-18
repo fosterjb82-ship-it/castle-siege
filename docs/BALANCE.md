@@ -22,6 +22,15 @@ Most drafted cards: Footmen Wave, Battering Ram, Raider Band, Burning Oil, Trebu
 
 Caveat: the defender AI plays well. It concentrates every card, troop and the Knight on the visibly threatened lane. Human players may do worse, so try a few human co-op games before drawing firm conclusions.
 
+## Update: defender troop cap (Garrison Capacity + Population)
+
+Normal, 100 games: defender win rate **100%**, breaches 66%, Keep HP at end 7.97. A tighter cap (base 4) and a looser one (base 8) gave the same result over 50 games each.
+
+The cap is binding: defenders end the game with 9–13 troops instead of 15–20, and Militia Levy is now a popular draft (it was 170 picks across these games). The win rate doesn't move because the defense in the threatened lane still reaches 24–36: every troop, all four defense cards and Rally pile into the one lane the Warlord visibly commits to. Meanwhile the AI Warlord attacks with only 3–12. So the remaining gap is **Warlord offense and concealment**, not defender numbers. Next levers:
+- Let the Warlord shift troops between adjacent approaches as a hidden siege move. Then defenders can't stack everything in one lane.
+- Limit how much troop Strength counts toward a lane's Defense, for example only troops on the wall that faces the attack, up to a few.
+- Give the Warlord more siege cards per round, or troop cards that arrive at full force.
+
 ## Update: siege engines (Catapult, sheltering Siege Tower, piercing Ram)
 
 `npm run sim -- --games 100` (Normal, seeds 1–100), compared with the table above:
