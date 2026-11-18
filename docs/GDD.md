@@ -1,7 +1,8 @@
 # Castle Siege — Game Design Document (Beta Build Spec)
 
 > **Working title:** Castle Siege (final name TBD)
-> **Status:** v0.1, the spec for the first playable beta. Everything marked *[tunable]* is a starting value to change during playtesting.
+> **Status:** v0.2. It adds the three-phase structure (Build → Siege → Assault) with a relief-army clock, plus food, the garrison cap and new siege engines. Everything marked *[tunable]* is a starting value to change during playtesting.
+> **Build status:** the beta in this repository implements v0.1 (Build → Siege, where the siege is what v0.2 calls the Assault), plus food, the garrison cap and the engines. **The Siege (blockade) phase and the relief clock (Sections 6, 9, 10) are not built yet.** They are milestone M7.
 > **Purpose:** this document is the handoff to a Claude Code build session. It holds the full rules, data and scope needed to build a testable beta.
 > **Source of truth for brainstorm history:** "Castle Siege Game — Design Doc (Working Draft)" (claude.ai Docs). This spec supersedes it where they differ.
 
@@ -14,7 +15,12 @@
 A digital co-op board game with cards, set in medieval times. Players build up a castle together, and the game ends in a siege where a large enemy force attacks and the team has to hold. **[Decided]**
 
 - The board develops as cards are played. Buildings and fortifications appear in slots on the castle map, and siege camps appear in the approaches around it. **[Decided]**
-- The game has two halves: a **Build Phase** (economy, infrastructure, drafting a hidden siege deck) and a **Siege Phase** (both sides play the decks they prepared). **[Decided]**
+- The game has **three phases [Decided, v0.2]**:
+  1. **Build:** economy, infrastructure, drafting a hidden siege deck.
+  2. **Siege:** the blockade. The castle is surrounded, food dwindles, the Warlord bombards and secretly masses his troops, and a relief army marches to the rescue.
+  3. **Assault:** the storming. Both sides play the siege decks they prepared.
+- **Food** is the castle's lifeline. It is stored during the Build Phase and eaten during the Siege and the Assault, with nothing coming in. **[Decided]**
+- A **relief army clock** stops the Warlord simply waiting the castle out. If the Keep still stands when the relief arrives, the defenders win. **[Decided]**
 - Each human defender plays a **character** with unique abilities. **[Decided]**
 - The **Warlord** (attacker) decides when the siege begins. **[Decided]**
 
@@ -27,7 +33,7 @@ A digital co-op board game with cards, set in medieval times. Players build up a
 |---|---|
 | **Co-op mode vs AI Warlord** | 1–4 human players on one device (hot-seat) split the 4 defender characters. Primary beta mode. |
 | **Warlord mode (hot-seat)** | 1 human Warlord vs 1–4 human defenders on one device. A "pass the device" privacy screen hides hands and face-down plays. |
-| Full Build Phase and Siege Phase | All rules in this document |
+| Full Build, Siege and Assault phases | All rules in this document (the Siege phase is milestone M7) |
 | One map | The standard castle (Section 4) |
 | Data-driven cards, buildings, troops, map | JSON files; tuning needs no code changes |
 | Game log | Every action and resolution step, readable text |
@@ -108,18 +114,22 @@ T = corner tower slot (covers both adjacent lanes)
 
 | Side | Resources | Pool |
 |---|---|---|
-| Defenders | Stone, Wood, Gold | **One shared stockpile [Decided]** |
+| Defenders | Stone, Wood, Gold, **Food** | **One shared stockpile [Decided]** |
 | Warlord | Supplies, Timber, Gold | Warlord's own stockpile |
+
+**Food (defenders) [Decided: food dwindles in the Siege and the Assault]:** produced only during the Build Phase (Keep +1, Granary +2 per Collect). From the War Horns on, no Food comes in: the fields are cut off. At the start of every Siege and Assault round the garrison eats **1 Food per 3 troops** *[tunable]*, rounded up; the Knight doesn't count. If the stores can't cover it, the garrison is **hungry** that round: **every defender troop −1 Strength** (minimum 0). **There is no starvation win [Decided]**: hunger only weakens the garrison.
+
+**Garrison Capacity (defenders) [Decided: cap defender troops]:** a hard cap on defender troops. The Keep houses 6, a Barracks adds 3, and a Garrison Hall houses 5 in total *[tunable]*. Training stops when the castle is full, and reinforcement cards only bring in as many troops as there is room for. **Population:** the castle has 6 townsfolk *[tunable]*. Militia Levy turns them into Militia *beyond* the cap until the town runs out. More troops also means more mouths to feed.
 
 **Supply Rating (Warlord only):** a cap on army size, separate from Supplies. Every Warlord troop on the board uses 1 Supply Rating. **If troops on the board exceed the Supply Rating, every Warlord troop gets −1 Strength** (minimum 0). Siege engines don't count.
 
 ### Starting state
 | | Defenders | Warlord |
 |---|---|---|
-| Materials *[tunable]* | 4 Stone, 4 Wood, 3 Gold | 5 Supplies, 3 Timber, 4 Gold |
+| Materials *[tunable]* | 4 Stone, 4 Wood, 3 Gold, 4 Food | 5 Supplies, 3 Timber, 4 Gold |
 | Structures | **Basic walls and wooden gates on all four sides [Decided]**, plus the keep | Main Siege Camp (placed during setup) |
 | Troops | 3 Militia (placed during setup) **[Decided: 3 troops]** | 3 Footmen (placed during setup) **[Decided: 3 troops]** |
-| Base income per round *[tunable]* | Keep: +1 Stone, +1 Wood, +1 Gold | Main Siege Camp: +2 Supplies |
+| Base income per round *[tunable]* | Keep: +1 Stone, +1 Wood, +1 Gold, +1 Food (Food in the Build Phase only) | Main Siege Camp: +2 Supplies; war chest +1 Supplies, +1 Timber, +1 Gold |
 | Siege deck *[tunable]* | Each character starts with 2× Hold the Line | 3× Advance |
 
 ### Starting structures *[tunable]*
@@ -135,9 +145,15 @@ T = corner tower slot (covers both adjacent lanes)
 
 1. **Setup Phase** (once)
 2. **Build Phase:** rounds 1…N
-3. **War Horns:** the Warlord triggers the siege; defenders get one final build round
-4. **Siege Phase:** a fixed number of siege rounds
-5. **End:** the keep holds (defenders win) or the Lord falls (Warlord wins)
+3. **War Horns:** the Warlord surrounds the castle. The relief clock starts.
+4. **Siege Phase (blockade):** 1–4 rounds. Food dwindles, the Warlord bombards and secretly repositions, and the defenders repair, sortie and scout. It ends when the Warlord orders the Assault, or the clock forces it.
+5. **Assault Phase:** the rest of the clock (3–6 rounds). Face-down siege cards, reveal, 5-step resolution.
+6. **End:** the relief army arrives with the Keep standing (defenders win), or the Lord falls (Warlord wins).
+
+```
+Build ──War Horns──▶ Siege (blockade) ──Assault ordered──▶ Assault ──▶ relief arrives / Keep falls
+                     └──────────── relief clock: 7 rounds ────────────┘
+```
 
 ---
 
@@ -203,24 +219,62 @@ T = corner tower slot (covers both adjacent lanes)
 
 ---
 
-## 9. War Horns [Decided: Warlord chooses timing] [Proposed: window]
+## 9. War Horns and the Siege Phase (blockade) [Decided: three phases, relief clock, no starvation win] [Proposed: details]
 
-- The Warlord may sound the War Horns at the end of any round **from round 4 through round 8** *[tunable]*. If they haven't by the end of round 8, the horns sound automatically.
-- After the horns sound, **defenders get one final build round** (Collect + defender turns; **the Warlord takes no actions** that round).
-- **Surprise Assault** (Warlord tactic, later): skip the defenders' final round. Not in the beta.
+### War Horns
+- The Warlord may sound the War Horns at the end of any Build round **from round 4 through round 8** *[tunable]*. If they haven't by the end of round 8, the horns sound automatically.
+- The horns **start the Siege Phase** and the **relief clock**. The v0.1 "one final build round" is replaced by the Siege Phase: defenders still act, but under blockade.
+- **Surprise Assault** (Warlord tactic, later): order the Assault right after the horns, skipping the blockade. Not in the beta.
+
+### Relief army clock [Decided: relief army] [Proposed: numbers]
+- When the horns sound, a relief army is **7 rounds away** *[tunable]*. One track counts down through both the Siege and Assault phases, one step at the end of every round.
+- **The Warlord orders the Assault** at the end of any Siege round. It must leave time to storm the walls: when **3 rounds remain** *[tunable]* the Assault starts automatically. So the blockade lasts 1–4 rounds, and the Assault 3–6.
+- **When the clock reaches 0, the relief army arrives.** If the Keep still stands, the defenders win.
+- **The central choice:** assault early against a fed, intact castle with plenty of rounds to fight, or wait so hunger and bombardment soften it up, with fewer rounds left for the storm.
+- The clock is always visible to both sides.
+
+### Siege (blockade) round [Proposed]
+1. **Collect.** The Warlord collects normally. Defender buildings inside the walls still produce Stone, Wood and Gold, but **no Food** comes in.
+2. **Upkeep:** the garrison eats (Section 5). A shortfall means the garrison is hungry this round (−1 Strength, which matters for sorties).
+3. **Bombardment:** Catapults and Trebuchets already emplaced fire, with the same effects as in the Assault's Ranged step. Rams, Ladders and Siege Towers wait for the Assault.
+4. **Defender turns:** the team chooses the order. Each character takes **1 action** *[tunable]*. The Warlord takes 1 action after each defender turn, as in the Build Phase.
+5. **End of round:** the relief clock moves 1 step. The Warlord may order the Assault.
+
+### Defender actions in the Siege [Proposed: reuse the Build actions, 1 per character]
+- All Build Phase actions remain: Build/Upgrade, Draft, Train (within the garrison cap), Move, Trade, character abilities. **Decree can't produce Food** during the Siege or the Assault.
+- **Sortie** (Knight only; replaces Raid): as a raid, but it may target an emplaced engine instead of a building.
+- **Scout:** look at the Warlord troops in one approach (see Hidden staging).
+- **Levy:** turn 2 townsfolk into Militia beyond the garrison cap (as the Militia Levy card).
+- The interesting trade-offs: repair or fortify? Scout or sortie? Levy more Militia, at the cost of more mouths to feed?
+
+### Warlord actions in the Siege [Proposed]
+- All Build Phase actions remain (Build, Draft, Recruit, Trade, Harass).
+- **March is hidden** (see below), and Raiders still march free.
+- **Emplace engine:** put an engine card from your siege deck onto an approach, face up. Catapults and Trebuchets start bombarding next round. Rams, Ladders and Siege Towers are ready on the first Assault round. Emplaced engines can be targeted by Sorties and by Burning Oil in the Assault.
+
+### Hidden staging [Proposed: secret repositioning during the Siege]
+- From the War Horns on, **the number of Warlord troops in each approach is hidden** from the defenders. They still see camps, engines and the Warlord's total army size and Supply Rating. On the table this is troop tokens behind a screen; in the digital version the counts are hidden.
+- The Scout action (and Scout Report / Spy cards in the Assault) reveals one approach's current count to the defenders.
+- **All troop positions are revealed when the Assault begins.** This is what makes the Assault a guessing game: the defenders must commit before they know where the main blow lands.
+
+### Rejected for now (to keep the game simple)
+- **Starvation win** (the castle surrenders): rejected. It would make waiting dominant.
+- **Rationing** (eat less, fight weaker): left out. During the blockade there is little fighting, so rationing would almost always be right and wouldn't be a real decision.
+- **Warlord camp upkeep / disease:** not needed while the relief clock provides the pressure.
 
 ---
 
-## 10. Siege Phase
+## 10. Assault Phase
 
 ### Overview
-- **5 siege rounds** *[tunable]*.
-- Collect still happens at the start of each siege round, but the only actions are playing siege cards and the steps below.
-- **Hand:** at the start of the siege, each defender character draws 3 from their siege deck and the Warlord draws 5 *[tunable]*. Refill to those sizes at the end of each round.
+- Lasts **until the relief army arrives**: whatever remains of the relief clock, 3–6 rounds (Section 9). The v0.1 fixed "5 siege rounds" is replaced by the clock.
+- **The Assault begins with a reveal of all hidden Warlord troop positions.** Engines emplaced during the Siege are already in place.
+- Each round starts with Collect (no Food for the defenders) and Upkeep (the garrison eats; if short, hungry: −1 Strength this round). The only other actions are playing siege cards and the steps below.
+- **Hand:** at the start of the Assault, each defender character draws 3 from their siege deck and the Warlord draws 5 *[tunable]*. Refill to those sizes at the end of each round.
 - **Fallback:** if a siege deck is empty, the player may play their basic card (Hold the Line / Advance) from an unlimited supply.
 
-### Siege round
-1. **Collect.**
+### Assault round
+1. **Collect and Upkeep.**
 2. **Move (hidden):** defenders may reposition troops between adjacent baileys; the Knight may move to any bailey. The Warlord may move troops into a breached bailey from its approach. Planned moves are revealed in step 4.
 3. **Plan:** cards are placed **face down** onto lanes (N/S/E/W) **[Decided]**:
     - **Each defender character plays 1 card [Decided: one per human player; Proposed: one per character].**
@@ -254,18 +308,21 @@ For each lane, after steps 1–3:
 
 ### Victory [Decided: Lord falls = Warlord wins] [Proposed: other conditions]
 - **Warlord wins** immediately when the Keep reaches 0 HP (the Lord falls).
-- **Defenders win** if the Keep still stands at the end of the final siege round.
-- **Defenders also win** immediately if the Warlord has no troops on the board and no troop cards in hand or deck.
+- **Defenders win** when the relief army arrives (the clock reaches 0) and the Keep still stands. **[Decided: relief army]**
+- **No starvation win [Decided]:** an empty larder only means hunger (−1 Strength), never surrender.
+- **Defenders also win** immediately if, during the Assault, the Warlord has no troops on the board and no troop cards in hand or deck. *[Proposed; under review: the beta simulation showed it ends many games early]*
 
 ---
 
 ## 11. Characters [Decided: the four roles] [Proposed: exact abilities]
 
+Build-phase abilities also apply during the Siege (blockade) phase. "Siege ability" means the Assault Phase.
+
 | Character | Build-phase ability (once per round) | Passive | Siege ability |
 |---|---|---|---|
-| **Lord** | **Decree** (action): gain 2 of any one resource | — | Stays in the Keep. **Rally:** once per siege round, in Recovery, +2 Defense to one lane next round. If the Lord falls, defenders lose. |
-| **Architect** | — | Walls, gates and towers cost 1 less Stone | **Repair:** once per siege round, in Recovery, restore 2 HP to one wall or gate |
-| **Quartermaster** (logistics) | **Requisition** (action): trade up to 3 resources at 1:1 | Each Market produces +1 Gold | **Resupply:** once per siege round, one lane's ranged effects get +1 damage |
+| **Lord** | **Decree** (action): gain 2 of any one resource | — | Stays in the Keep. **Rally:** once per Assault round, in Recovery, +2 Defense to one lane next round. If the Lord falls, defenders lose. |
+| **Architect** | — | Walls, gates and towers cost 1 less Stone | **Repair:** once per Assault round, in Recovery, restore 2 HP to one wall or gate |
+| **Quartermaster** (logistics) | **Requisition** (action): trade up to 3 resources at 1:1 | Each Market produces +1 Gold | **Resupply:** once per Assault round, one lane's ranged effects get +1 damage |
 | **Knight** | **Raid** (exclusive action) | Training troops costs 1 less Gold | The Knight is a unit (Strength 2, HP 3) that can move to any bailey each round. If defeated, it returns to the Keep after 1 round. |
 
 **Design rule [Decided]:** no "boss" player. The Lord has unique powers, not authority over others. Each character draws from the shared decks, but the cards they keep shape their own siege deck.
@@ -282,7 +339,8 @@ For each lane, after steps 1–3:
 | quarry | Quarry | Bailey | 2 Wood | +2 Stone per Collect | — |
 | lumber_mill | Lumber Mill | Bailey | 2 Gold | +2 Wood per Collect | — |
 | market | Market | Bailey | 2 Wood, 1 Stone | +2 Gold per Collect | — |
-| barracks | Barracks | Bailey | 2 Wood, 2 Gold | Unlocks Garrison deck and Men-at-arms and Archers | Garrison Hall |
+| granary | Granary | Bailey | 2 Wood | +2 Food per Collect (Build Phase only) | — |
+| barracks | Barracks | Bailey | 2 Wood, 2 Gold | Garrison Capacity +3; unlocks Garrison deck and Men-at-arms and Archers | Garrison Hall |
 | garrison_hall | Garrison Hall | (upgrade) | 3 Stone, 2 Gold | All defender troops +1 Strength; unlocks Knights of the Keep | — |
 | weaponsmith | Weaponsmith | Bailey | 2 Stone, 2 Gold | Choose one troop type at build time: +1 Strength | — |
 | arrow_tower | Arrow Tower | Corner tower slot | 2 Stone, 1 Wood | +1 Defense to both adjacent lanes; Ranged: 1 damage to one attacking troop in each adjacent lane | Stone Tower |
@@ -384,10 +442,13 @@ Engines stay on the board until destroyed and attack every round.
 
 | Card | Speed | Target | Attack | HP | Notes | Copies |
 |---|---|---|---|---|---|---|
-| Battering Ram | engine | Gate | 3 | 3 | Blocked by moat **[Decided: rams hit gates]** | 3 |
+| Battering Ram | engine | Gate | 3 | 3 | Ignores up to 2 of the gate's Defense, so it can break a Gatehouse. Blocked by moat **[Decided: rams hit gates]** | 3 |
 | Ladders | engine | Wall | 2 | — | One use **[Decided: ladders hit walls]** | 3 |
-| Siege Tower | engine | Wall | 3 | 4 | Blocked by moat | 2 |
+| Siege Tower | engine | Wall | 3 | 4 | Shelters up to 4 troops in its approach from ranged fire **[Decided: siege towers protect troops]**. Blocked by moat (the shelter still works) | 2 |
 | Trebuchet | ranged | Wall or tower | 2 | 3 | Ignores moat; can damage towers | 2 |
+| Catapult | ranged | Tower (wall if none) | 2 vs towers / 1 vs wall | 3 | Ignores moat; bombards the towers covering its lane **[Decided: catapults attack towers]** | 3 |
+
+During the Siege (blockade) phase, engines are **emplaced** as a Warlord action. Catapults and Trebuchets bombard every Siege round; the others wait for the Assault.
 
 ---
 
@@ -398,7 +459,9 @@ Simple, rule-based, seeded. It should be beatable but threatening.
 - **Setup:** place the Main Siege Camp in a random approach (weighted toward lanes without starting defender troops). Spread Footmen 2/1.
 - **Build rounds 1–3:** prioritize economy (Supply Line, Foraging Camp), then War Camp and Siege Workshop. Recruit to keep troops ≤ Supply Rating.
 - **Build rounds 4+:** draft heavily (engines and directional assaults for the target lane). Choose the **target lane** = the lane with the lowest (structure Defense + troops + towers), with the main camp's lane as a tiebreaker.
-- **War Horns:** sound when army Strength ≥ (total defender Strength + 6) *[tunable]*, or at round 8.
+- **War Horns:** sound when army Strength ≥ (total defender Strength + 6) *[tunable]*, or by round 6 (the beta's tuned value), or at round 8.
+- **Siege (blockade):** emplace Catapults where towers cover the target lane, then Trebuchets; secretly mass troops in the target lane with one feint group elsewhere; harass Granaries.
+- **When to order the Assault [Proposed]:** when the defenders are hungry, or the target lane's towers are down / its wall or gate is below half HP, or the clock forces it.
 - **Siege plays:** 2 cards on the target lane, 1 feint (Decoy or a weak card) on another lane. Switch target if a different lane gets breached.
 - **Difficulty:** Easy / Normal / Hard scale the Warlord's income (×0.75 / ×1 / ×1.25) *[tunable]*.
 
@@ -410,7 +473,9 @@ Simple, rule-based, seeded. It should be beatable but threatening.
 - **Stronger Warlord cards [Decided lean]:** the Warlord plays fewer cards, so its cards hit harder (+3 directional vs. +2 generic).
 - **Small interleaved Warlord turns:** 1 action after each defender turn.
 - **The attack timing window** is a key balance lever.
-- **Other levers:** Warlord income scaling, deck draw costs, structure HP, siege round count, Warlord cards per round.
+- **Relief clock:** its length and the forced-Assault point decide how long the blockade can run. They are the main levers for the Siege phase.
+- **Food:** starting Food, Granary output and troops per Food set how hard waiting bites.
+- **Other levers:** Warlord income scaling, deck draw costs, structure HP, relief clock length, Warlord cards per round.
 - **Simulation:** the headless runner plays AI vs. AI games and reports win rate, average siege round of the breach, most-picked cards and most-breached lane. Target win rate for co-op on Normal: about 50–60% for defenders *[tunable]*.
 
 ---
@@ -423,6 +488,9 @@ Simple, rule-based, seeded. It should be beatable but threatening.
 4. **Turn order picker:** at the start of each build round, defenders choose who goes next.
 5. **Draft modal:** show 3 drawn cards, pick 1.
 6. **War Horns banner:** a clear moment when the siege is announced.
+6a. **Relief clock:** always visible, with the forced-Assault point marked, plus a Food gauge showing rounds of food left at current upkeep.
+6b. **Siege (blockade) panel:** one action per character; Scout, Sortie and Levy; the Warlord's hidden March and Emplace engine. Approaches show "? troops" to defenders until scouted or revealed.
+6c. **Assault banner:** troop positions revealed with a sweep across the board.
 7. **Siege planning:** privacy screen "Pass to [Character]" in hot-seat; drag a card onto a lane face down.
 8. **Reveal and resolution:** flip all cards together, then step through the 5 resolution steps with highlights and log lines. A "next step" button, plus an auto-play option.
 9. **Game log:** scrollable, every action and result.
@@ -445,7 +513,9 @@ Simple, rule-based, seeded. It should be beatable but threatening.
   characters.json        abilities and passives
   rules.json             tunables: starting resources, income, actions per turn,
                          war-horn window, siege rounds, hand sizes, Warlord cards per round,
-                         trade rate, AI difficulty multipliers
+                         trade rate, AI difficulty multipliers,
+                         relief clock length and forced-Assault point, food upkeep,
+                         garrison capacity and population
 ```
 
 Example card record:
@@ -478,6 +548,7 @@ Effects should use a small set of typed effect handlers (`attackBonus`, `defense
 | M4 | AI Warlord + co-op loop | A full co-op game can be played start to finish vs AI |
 | M5 | Hot-seat Warlord mode | Privacy screens; a full human-vs-human game works |
 | M6 | Playtest tools | Debug panel, save/load, log export, headless AI-vs-AI simulation with summary stats |
+| M7 | Three phases (v0.2) | Siege (blockade) phase, relief clock, hidden staging, Scout/Sortie/Levy/Emplace actions, Assault phase on the clock; AI Warlord decides when to assault; sim reports blockade length and hunger |
 
 **Beta definition:** M1–M6 complete, and a full co-op game takes about 45–75 minutes *[tunable target]*.
 
@@ -488,11 +559,16 @@ Effects should use a small set of typed effect handlers (`attackBonus`, `defense
 - [ ] Final game title
 - [ ] Engine and stack confirmation (desktop browser prototype assumed)
 - [ ] Build round count and the War Horns window (4–8 assumed)
-- [ ] Siege round count (5 assumed)
+- [x] ~~Siege round count (5 assumed)~~: replaced by the relief clock (7 rounds after the horns, Assault forced at 3 left)
+- [ ] Relief clock length and forced-Assault point (7 / 3 assumed)
+- [ ] Siege (blockade) phase: 1 action per character, or 2?
+- [ ] Should defender buildings keep producing Stone/Wood/Gold under blockade, or does all income stop?
+- [ ] Keep or drop the "Warlord has no troops left" instant win?
+- [ ] Rationing: worth adding later if hunger needs a decision attached?
 - [ ] Lane combat formula and casualty rule (Section 10 is a first pass)
 - [ ] Should the unkept draft cards go to a shared face-up row in co-op?
 - [ ] Barbican upgrade (adds tower slots beside a gate) — later or in the beta?
-- [ ] Does a breach give the Warlord a bonus against the keep?
+- [x] ~~Does a breach give the Warlord a bonus against the keep?~~: beta answer: yes, a big bailey win carries through to the Keep (see `docs/RULES-NOTES.md`)
 - [ ] Every card cost and number, to be set through playtesting
 
 ## 21. Future expansions
