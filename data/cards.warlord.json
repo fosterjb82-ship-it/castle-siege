@@ -1,0 +1,347 @@
+[
+  {
+    "id": "advance",
+    "name": "Advance",
+    "side": "warlord",
+    "deck": "basic",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "any",
+    "effects": [
+      {
+        "type": "attackBonus",
+        "amount": 1
+      }
+    ],
+    "copies": 0,
+    "text": "+1 attack in this lane. Basic card (unlimited fallback).",
+    "basic": true
+  },
+  {
+    "id": "northern_assault",
+    "name": "Northern Assault",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "N",
+    "target": "any",
+    "effects": [
+      {
+        "type": "attackBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 attack, only in the North lane."
+  },
+  {
+    "id": "eastern_assault",
+    "name": "Eastern Assault",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "E",
+    "target": "any",
+    "effects": [
+      {
+        "type": "attackBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 attack, only in the East lane."
+  },
+  {
+    "id": "southern_assault",
+    "name": "Southern Assault",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "S",
+    "target": "any",
+    "effects": [
+      {
+        "type": "attackBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 attack, only in the South lane."
+  },
+  {
+    "id": "western_assault",
+    "name": "Western Assault",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "W",
+    "target": "any",
+    "effects": [
+      {
+        "type": "attackBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 attack, only in the West lane."
+  },
+  {
+    "id": "decoy_banners",
+    "name": "Decoy Banners",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "decoy",
+        "looksLike": "advance"
+      }
+    ],
+    "copies": 3,
+    "text": "Does nothing. Looks like an attack card if scouted."
+  },
+  {
+    "id": "spy_in_the_walls",
+    "name": "Spy in the Walls",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "peekHand",
+        "target": "defender",
+        "count": 1
+      }
+    ],
+    "copies": 3,
+    "text": "Look at 1 card in a chosen defender's hand."
+  },
+  {
+    "id": "volley",
+    "name": "Volley",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "troops",
+    "effects": [
+      {
+        "type": "damageTroops",
+        "amount": 2
+      }
+    ],
+    "copies": 3,
+    "text": "2 damage to defender troops in this lane."
+  },
+  {
+    "id": "sappers",
+    "name": "Sappers",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "engine",
+    "laneRule": "any",
+    "target": "wall",
+    "effects": [
+      {
+        "type": "damageStructure",
+        "structure": "wall",
+        "amount": 2,
+        "ignoreDefense": true
+      }
+    ],
+    "copies": 2,
+    "text": "2 damage to this lane's wall, ignoring Defense."
+  },
+  {
+    "id": "bribe_the_guard",
+    "name": "Bribe the Guard",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "gate",
+    "effects": [
+      {
+        "type": "debuffStructure",
+        "structure": "gate",
+        "amount": 2
+      }
+    ],
+    "copies": 2,
+    "text": "This lane's gate -2 Defense this round."
+  },
+  {
+    "id": "bridge",
+    "name": "Bridge",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "ignoreMoat"
+      }
+    ],
+    "copies": 2,
+    "text": "Engines ignore this lane's moat this round."
+  },
+  {
+    "id": "footmen_wave",
+    "name": "Footmen Wave",
+    "side": "warlord",
+    "deck": "troops",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "footmen",
+        "count": 3
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 3 Footmen in this approach."
+  },
+  {
+    "id": "raider_band",
+    "name": "Raider Band",
+    "side": "warlord",
+    "deck": "troops",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "raiders",
+        "count": 2
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 2 Raiders in this approach."
+  },
+  {
+    "id": "crossbow_line",
+    "name": "Crossbow Line",
+    "side": "warlord",
+    "deck": "troops",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "crossbowmen",
+        "count": 2
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 2 Crossbowmen in this approach (they fire this round)."
+  },
+  {
+    "id": "veteran_company",
+    "name": "Veteran Company",
+    "side": "warlord",
+    "deck": "troops",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "veterans",
+        "count": 1
+      }
+    ],
+    "copies": 2,
+    "text": "Deploy 1 Veterans in this approach (requires Veteran Camp).",
+    "requires": "veteran_camp"
+  },
+  {
+    "id": "battering_ram",
+    "name": "Battering Ram",
+    "side": "warlord",
+    "deck": "engines",
+    "speed": "engine",
+    "laneRule": "any",
+    "target": "gate",
+    "effects": [
+      {
+        "type": "engine",
+        "target": "gate",
+        "attack": 3,
+        "hp": 3,
+        "blockedByMoat": true
+      }
+    ],
+    "copies": 3,
+    "text": "Engine. Attacks the gate for 3 every round. Blocked by a moat."
+  },
+  {
+    "id": "ladders",
+    "name": "Ladders",
+    "side": "warlord",
+    "deck": "engines",
+    "speed": "engine",
+    "laneRule": "any",
+    "target": "wall",
+    "effects": [
+      {
+        "type": "engine",
+        "target": "wall",
+        "attack": 2,
+        "hp": 1,
+        "oneUse": true
+      }
+    ],
+    "copies": 3,
+    "text": "Engine (one use). Attacks the wall for 2."
+  },
+  {
+    "id": "siege_tower",
+    "name": "Siege Tower",
+    "side": "warlord",
+    "deck": "engines",
+    "speed": "engine",
+    "laneRule": "any",
+    "target": "wall",
+    "effects": [
+      {
+        "type": "engine",
+        "target": "wall",
+        "attack": 3,
+        "hp": 4,
+        "blockedByMoat": true
+      }
+    ],
+    "copies": 2,
+    "text": "Engine. Attacks the wall for 3 every round. Blocked by a moat."
+  },
+  {
+    "id": "trebuchet",
+    "name": "Trebuchet",
+    "side": "warlord",
+    "deck": "engines",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "wall",
+    "effects": [
+      {
+        "type": "engine",
+        "target": "wall",
+        "attack": 2,
+        "hp": 3,
+        "ranged": true,
+        "canHitTowers": true
+      }
+    ],
+    "copies": 2,
+    "text": "Ranged engine. 2 damage to the wall (or a tower covering the lane) every round, ignoring Defense. Ignores moats."
+  }
+]

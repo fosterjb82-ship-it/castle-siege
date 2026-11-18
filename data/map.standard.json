@@ -1,0 +1,20 @@
+{
+  "id": "standard",
+  "name": "The Standard Castle",
+  "lanes": ["N", "E", "S", "W"],
+  "laneNames": { "N": "North", "E": "East", "S": "South", "W": "West" },
+  "adjacency": { "N": ["E", "W"], "E": ["N", "S"], "S": ["E", "W"], "W": ["S", "N"] },
+  "approachSlots": { "N": 3, "E": 3, "S": 3, "W": 3 },
+  "baileySlots": { "N": 3, "E": 2, "S": 3, "W": 2 },
+  "towers": {
+    "NE": { "covers": ["N", "E"] },
+    "NW": { "covers": ["N", "W"] },
+    "SE": { "covers": ["S", "E"] },
+    "SW": { "covers": ["S", "W"] }
+  },
+  "startingStructures": {
+    "wall": "basic_wall",
+    "gate": "wooden_gate",
+    "keep": { "defense": 3, "hp": 8 }
+  }
+}

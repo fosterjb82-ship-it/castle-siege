@@ -1,0 +1,153 @@
+{
+  "startingResources": {
+    "defender": {
+      "stone": 4,
+      "wood": 4,
+      "gold": 3
+    },
+    "warlord": {
+      "supplies": 5,
+      "timber": 3,
+      "gold": 4
+    }
+  },
+  "baseIncome": {
+    "defender": {
+      "stone": 1,
+      "wood": 1,
+      "gold": 1
+    },
+    "warlord": {
+      "supplies": 1,
+      "timber": 1,
+      "gold": 1
+    }
+  },
+  "startingTroops": {
+    "defender": {
+      "militia": 3
+    },
+    "warlord": {
+      "footmen": 3
+    }
+  },
+  "starterSiegeCards": {
+    "defenderPerCharacter": {
+      "hold_the_line": 2
+    },
+    "warlord": {
+      "advance": 3
+    }
+  },
+  "fallbackCard": {
+    "defender": "hold_the_line",
+    "warlord": "advance"
+  },
+  "defenderActionsPerTurn": 2,
+  "warlordActionsPerDefenderTurn": 1,
+  "tradeRate": 2,
+  "requisitionMax": 3,
+  "decreeAmount": 2,
+  "draftDrawCount": 3,
+  "draftCosts": {
+    "defender": {
+      "tactics": {
+        "cost": {
+          "gold": 2
+        }
+      },
+      "fortifications": {
+        "cost": {
+          "stone": 2
+        }
+      },
+      "garrison": {
+        "cost": {
+          "gold": 1,
+          "wood": 1
+        },
+        "requires": "barracks"
+      }
+    },
+    "warlord": {
+      "tactics": {
+        "cost": {
+          "gold": 2
+        }
+      },
+      "troops": {
+        "cost": {
+          "supplies": 2
+        },
+        "requires": "war_camp"
+      },
+      "engines": {
+        "cost": {
+          "timber": 2
+        },
+        "requires": "siege_workshop"
+      }
+    }
+  },
+  "marchCost": {
+    "supplies": 1
+  },
+  "marchMaxTroops": 3,
+  "harassCost": {
+    "supplies": 2
+  },
+  "harassMinTroops": 3,
+  "baseSupplyRating": 0,
+  "overSupplyStrengthPenalty": 1,
+  "warHorns": {
+    "earliestRound": 4,
+    "latestRound": 8
+  },
+  "siegeRounds": 5,
+  "handSize": {
+    "defenderPerCharacter": 3,
+    "warlord": 5
+  },
+  "warlordCardsPerRound": 3,
+  "raid": {
+    "knightStrength": 2,
+    "maxTroops": 2,
+    "gateDamageOnFail": 2,
+    "guardPerBuilding": 2
+  },
+  "knight": {
+    "strength": 2,
+    "hp": 3,
+    "downRounds": 1
+  },
+  "bailey": {
+    "buildingDestroyMargin": 2,
+    "keepSpillover": true
+  },
+  "lordRally": {
+    "defense": 2
+  },
+  "architectRepair": {
+    "amount": 2
+  },
+  "quartermasterResupply": {
+    "bonus": 1
+  },
+  "defaultTroopTarget": "gate",
+  "ai": {
+    "difficultyIncome": {
+      "easy": 0.75,
+      "normal": 1,
+      "hard": 1.25
+    },
+    "hornsStrengthMargin": 6,
+    "economyRounds": 3,
+    "hornsByRound": 6
+  },
+  "minimumCostAfterDiscount": 1,
+  "recruitPerAction": 3,
+  "casualties": {
+    "baileyPerMargin": 3
+  },
+  "breachDeployIntoBailey": true
+}

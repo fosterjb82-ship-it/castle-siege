@@ -1,0 +1,321 @@
+[
+  {
+    "id": "hold_the_line",
+    "name": "Hold the Line",
+    "side": "defender",
+    "deck": "basic",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 1
+      }
+    ],
+    "copies": 0,
+    "text": "+1 Defense in this lane. Basic card (unlimited fallback).",
+    "basic": true
+  },
+  {
+    "id": "northern_defense",
+    "name": "Northern Defense",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "N",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 Defense, only in the North lane."
+  },
+  {
+    "id": "eastern_defense",
+    "name": "Eastern Defense",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "E",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 Defense, only in the East lane."
+  },
+  {
+    "id": "southern_defense",
+    "name": "Southern Defense",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "S",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 Defense, only in the South lane."
+  },
+  {
+    "id": "western_defense",
+    "name": "Western Defense",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "W",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 3
+      }
+    ],
+    "copies": 2,
+    "text": "+3 Defense, only in the West lane."
+  },
+  {
+    "id": "shield_wall",
+    "name": "Shield Wall",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 2
+      }
+    ],
+    "copies": 3,
+    "text": "+2 Defense in this lane."
+  },
+  {
+    "id": "scout_report",
+    "name": "Scout Report",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "peekHand",
+        "target": "warlord",
+        "count": 1
+      }
+    ],
+    "copies": 3,
+    "text": "Look at 1 random card in the Warlord's hand."
+  },
+  {
+    "id": "counter_feint",
+    "name": "Counter-Feint",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "drawCards",
+        "amount": 2,
+        "condition": "noEnemyCardInLane"
+      }
+    ],
+    "copies": 2,
+    "text": "If no Warlord card was played in this lane, draw 2 cards."
+  },
+  {
+    "id": "sally_forth",
+    "name": "Sally Forth",
+    "side": "defender",
+    "deck": "tactics",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "sallyForth"
+      }
+    ],
+    "copies": 2,
+    "text": "Knight only. The Knight and troops in this bailey attack the approach: compare Strength, the loser loses its weakest troop.",
+    "character": "knight"
+  },
+  {
+    "id": "burning_oil",
+    "name": "Burning Oil",
+    "side": "defender",
+    "deck": "fortifications",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "engines",
+    "effects": [
+      {
+        "type": "destroyEngine",
+        "count": 1
+      }
+    ],
+    "copies": 3,
+    "text": "Destroy one siege engine attacking this lane."
+  },
+  {
+    "id": "barricade",
+    "name": "Barricade",
+    "side": "defender",
+    "deck": "fortifications",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "defenseBonus",
+        "amount": 2
+      },
+      {
+        "type": "tempHp",
+        "structure": "gate",
+        "amount": 2
+      }
+    ],
+    "copies": 3,
+    "text": "+2 Defense in this lane; the gate gets +2 temporary HP this round."
+  },
+  {
+    "id": "caltrops",
+    "name": "Caltrops",
+    "side": "defender",
+    "deck": "fortifications",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "troops",
+    "effects": [
+      {
+        "type": "debuffTroops",
+        "amount": 1
+      }
+    ],
+    "copies": 3,
+    "text": "Warlord troops in this lane -1 Strength this round."
+  },
+  {
+    "id": "emergency_repairs",
+    "name": "Emergency Repairs",
+    "side": "defender",
+    "deck": "fortifications",
+    "speed": "recovery",
+    "laneRule": "any",
+    "target": "any",
+    "effects": [
+      {
+        "type": "repair",
+        "amount": 3
+      }
+    ],
+    "copies": 3,
+    "text": "Restore 3 HP to this lane's wall or gate (whichever is more damaged)."
+  },
+  {
+    "id": "murder_holes",
+    "name": "Murder Holes",
+    "side": "defender",
+    "deck": "fortifications",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "troops",
+    "effects": [
+      {
+        "type": "damageTroops",
+        "amount": 2
+      }
+    ],
+    "copies": 2,
+    "text": "2 damage to troops attacking this lane's gate."
+  },
+  {
+    "id": "militia_levy",
+    "name": "Militia Levy",
+    "side": "defender",
+    "deck": "garrison",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "militia",
+        "count": 2
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 2 Militia in this bailey."
+  },
+  {
+    "id": "archer_company",
+    "name": "Archer Company",
+    "side": "defender",
+    "deck": "garrison",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "archers",
+        "count": 2
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 2 Archers in this bailey (they fire this round)."
+  },
+  {
+    "id": "men_at_arms_detachment",
+    "name": "Men-at-arms Detachment",
+    "side": "defender",
+    "deck": "garrison",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "men_at_arms",
+        "count": 1
+      }
+    ],
+    "copies": 3,
+    "text": "Deploy 1 Men-at-arms in this bailey."
+  },
+  {
+    "id": "knights_of_the_keep",
+    "name": "Knights of the Keep",
+    "side": "defender",
+    "deck": "garrison",
+    "speed": "melee",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "deployTroops",
+        "troop": "keep_knights",
+        "count": 1
+      }
+    ],
+    "copies": 2,
+    "text": "Deploy 1 Knights of the Keep in this bailey (requires Garrison Hall).",
+    "requires": "garrison_hall"
+  }
+]

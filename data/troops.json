@@ -1,0 +1,10 @@
+[
+  { "id": "militia", "side": "defender", "name": "Militia", "strength": 1, "hp": 1, "cost": { "gold": 1 } },
+  { "id": "archers", "side": "defender", "name": "Archers", "strength": 1, "hp": 1, "cost": { "gold": 2 }, "requires": "barracks", "ranged": 1 },
+  { "id": "men_at_arms", "side": "defender", "name": "Men-at-arms", "strength": 2, "hp": 2, "cost": { "gold": 2, "wood": 1 }, "requires": "barracks" },
+  { "id": "keep_knights", "side": "defender", "name": "Knights of the Keep", "strength": 3, "hp": 2, "cost": { "gold": 3, "stone": 1 }, "requires": "garrison_hall" },
+  { "id": "footmen", "side": "warlord", "name": "Footmen", "strength": 1, "hp": 1, "cost": { "supplies": 1 } },
+  { "id": "raiders", "side": "warlord", "name": "Raiders", "strength": 2, "hp": 1, "cost": { "supplies": 2 }, "requires": "war_camp", "freeMarch": true },
+  { "id": "crossbowmen", "side": "warlord", "name": "Crossbowmen", "strength": 1, "hp": 1, "cost": { "supplies": 2, "gold": 1 }, "requires": "war_camp", "ranged": 1 },
+  { "id": "veterans", "side": "warlord", "name": "Veterans", "strength": 3, "hp": 2, "cost": { "supplies": 3, "gold": 1 }, "requires": "veteran_camp" }
+]

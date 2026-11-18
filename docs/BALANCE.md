@@ -1,0 +1,65 @@
+# Balance report (beta v0.1)
+
+**Short version: in AI-vs-AI simulation the defenders win every game, at every difficulty.** The rules engine, AI and tools work. The numbers and parts of the combat model need a designer's decisions; the GDD expects these to be "set through playtesting". This report shows what the simulator found, what was changed while building the beta, and which levers to try next.
+
+## Current results
+
+`npm run sim -- --games 100 --difficulty all` (seeds 1–100, AI defenders vs AI Warlord):
+
+| | Easy | Normal | Hard |
+|---|---|---|---|
+| Defender win rate | 100% | 100% | 100% |
+| Games with a breach | 44% | 58% | 54% |
+| Avg siege round of first breach | 3.0 | 3.2 | 2.9 |
+| Avg siege rounds played | 4.1 | 4.5 | 4.4 |
+| Avg Keep HP at end (of 8) | 7.99 | 7.99 | 7.93 |
+| Ended by "Warlord has no troops left" | 66% | 40% | 49% |
+| Avg War Horns round | 5.9 | 5.9 | 5.9 |
+
+The target in the GDD is 50–60% defender wins in co-op on Normal. Breaches happen in about half of all games, but the Warlord almost never damages the Keep.
+
+Most drafted cards: Footmen Wave, Battering Ram, Raider Band, Burning Oil, Trebuchet, Archer Company. Breaches are spread evenly across the four lanes.
+
+Caveat: the defender AI plays well. It concentrates every card, troop and the Knight on the visibly threatened lane. Human players may do worse, so try a few human co-op games before drawing firm conclusions.
+
+## What the simulator found, and what changed
+
+Each of these was found by running the sim on the spec's rules as written. The fixes are in `data/rules.json` and are explained in `RULES-NOTES.md`.
+
+| Finding | Effect on the spec rules | Beta change |
+|---|---|---|
+| The Knight's −1 Gold discount makes Militia free | Unlimited free troops | Discounts can't make a cost free |
+| The Warlord had no Gold or Timber income | Couldn't afford Supply Lines, War Camps or drafts | +1 Supplies, +1 Timber, +1 Gold base income |
+| Raids on empty approaches always win | 846 raids won, 0 lost in 100 games; Warlord economy wiped out | +2 defending Strength per Warlord building (camp guards) |
+| Towers shot every Warlord troop on the map each round | The whole army died in siege round 1 | Only troops in lanes "under attack" can be shot |
+| An empty bailey is the only way to reach the Keep | Keep never damaged once defenders rush the breach | Bailey-fight margin carries through to the Keep |
+| A bailey fight costs only 1 troop per round | Breaches never turned into wins | Bailey casualties scale with the margin (1 per 3) |
+| Reinforcements landed outside a breach and got shot walking in | The breach was fed a few troops at a time | Troop cards played on a breached lane deploy inside |
+| 4 Warlord actions per round vs 8 for defenders | The army was too small to matter | Recruit up to 3 troops per action |
+
+The win rate stayed at 100%, but these changes took the game from "the Warlord's army dies in round 1" to "sieges last the full 5 rounds and breach about half the time".
+
+## Why the Warlord still loses (structural)
+
+1. **Defender troops have no cap; Warlord troops do.** Supply Rating caps the Warlord at about 11–15 troops. Defenders end the build phase with 15–20 troops at Strength 2 each (Garrison Hall), and every one adds directly to lane Defense in the combat formula.
+2. **Defender ranged fire wears the attackers down every round.** Each lane is covered by two corner towers, and Archer Company adds two archers that fire every round from then on. Together they kill 3–5 one-HP attackers per round in the lane under attack.
+3. **The attack lane is never a surprise.** Warlord troops are visible and can't move between approaches during the siege, so defenders always know where to send everything. Face-down cards and Decoys add little bluffing while the army's position gives the plan away.
+4. **The instant-loss rule ends many sieges early.** "No troops on board and no troop cards" ended 40–66% of games, even with engines still on the board.
+
+## Levers to try next (all data, no code)
+
+Use `npm run sim -- --override file.json`; `sim-variants/example-tougher-warlord.json` shows the format. In 20-game sweeps, none of the following moved the AI-vs-AI win rate off 100%, alone or combined. The strongest combination tried raised the breach rate from about 58% to 75%: troop HP 2, pricier towers and archers, 6 siege rounds and 4 Warlord cards per round. Even then the Keep stayed at full HP. The levers:
+
+- Warlord troop HP: `troops.footmen.hp` and `troops.raiders.hp` from 1 to 2.
+- Tower and archer cost: `buildings.arrow_tower.cost`, `troops.archers.cost`, and `cards.archer_company.effects[0].count`.
+- Siege length and Warlord cards: `rules.siegeRounds`, `rules.warlordCardsPerRound` and `rules.handSize.warlord`.
+- Keep strength: `map.startingStructures.keep`.
+- Supply Rating and income: `buildings.main_siege_camp.supplyRating` and `.produces`, `buildings.siege_camp.supplyRating`, `rules.ai.difficultyIncome`.
+
+Rule changes worth considering:
+- **A defender troop cap**, such as a garrison limit per bailey, or upkeep, to mirror the Warlord's Supply Rating.
+- **Let the Warlord shift troops between adjacent approaches during the siege.** For example, March as a hidden siege move. Feints would then matter.
+- Count engines in the instant-loss check, or drop it.
+- Count only some of the defender troops' Strength toward wall Defense, so the walls rather than the garrison do the defending.
+
+The rule switches added in the beta (`rules.breachDeployIntoBailey`, `rules.bailey.keepSpillover`, `rules.casualties.baileyPerMargin`, `rules.raid.guardPerBuilding`, `rules.recruitPerAction`, `rules.minimumCostAfterDiscount`) can each be turned off in `rules.json` to return to the spec's original rule.
