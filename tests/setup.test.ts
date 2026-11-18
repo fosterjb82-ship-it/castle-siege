@@ -18,7 +18,7 @@ describe('setup', () => {
   it('builds shuffled draft decks from card copies', () => {
     const s = newGame();
     expect(s.draftDecks.defender.tactics.length).toBe(2 * 4 + 3 + 3 + 2 + 2);
-    expect(s.draftDecks.warlord.engines.length).toBe(3 + 3 + 2 + 2);
+    expect(s.draftDecks.warlord.engines.length).toBe(3 + 3 + 2 + 2 + 3); // ram, ladders, siege tower, trebuchet, catapult
   });
 
   it('is deterministic for a seed', () => {

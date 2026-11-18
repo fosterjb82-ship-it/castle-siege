@@ -109,8 +109,8 @@ describe('resolution steps', () => {
     let s = siege((x) => { x.hands.warlord = ['battering_ram', 'advance', 'advance']; });
     s = planAll(s, [{ cardId: 'battering_ram', lane: 'E' }, ADV('E'), ADV('E')]);
     s = resolveTo(s, 4);
-    // Ram 3 vs wooden gate Defense 1 -> 2 damage.
-    expect(s.gates.E.hp).toBe(2);
+    // Ram 3 ignores up to 2 gate Defense: wooden gate (Defense 1) takes the full 3.
+    expect(s.gates.E.hp).toBe(1);
     expect(s.engines.length).toBe(1);
 
     let m = siege((x) => { x.moats.E = true; x.hands.warlord = ['battering_ram', 'advance', 'advance']; });
@@ -119,7 +119,52 @@ describe('resolution steps', () => {
 
     let b = siege((x) => { x.moats.E = true; x.hands.warlord = ['battering_ram', 'bridge', 'advance']; });
     b = resolveTo(planAll(b, [{ cardId: 'battering_ram', lane: 'E' }, { cardId: 'bridge', lane: 'E' }, ADV('E')]), 4);
-    expect(b.gates.E.hp).toBe(2);
+    expect(b.gates.E.hp).toBe(1);
+  });
+
+  it('a Battering Ram breaks even a Gatehouse (pierces 2 Defense)', () => {
+    let s = siege((x) => {
+      x.gates.E = { buildingId: 'gatehouse', hp: 8, maxHp: 8, tempHp: 0 };
+      x.hands.warlord = ['battering_ram', 'advance', 'advance'];
+    });
+    s = resolveTo(planAll(s, [{ cardId: 'battering_ram', lane: 'E' }, ADV('E'), ADV('E')]), 4);
+    // 3 attack vs Defense 3 - 2 pierce = 1 -> 2 damage (it would be 0 without pierce).
+    expect(s.gates.E.hp).toBe(6);
+  });
+
+  it('a Catapult batters the towers covering its lane, then falls back to the wall', () => {
+    let s = siege((x) => {
+      x.towers.SE = { uid: 900, buildingId: 'arrow_tower', hp: 4, maxHp: 4 };
+      x.hands.warlord = ['catapult', 'advance', 'advance'];
+    });
+    s = planAll(s, [{ cardId: 'catapult', lane: 'S' }, ADV('S'), ADV('S')]);
+    expect(s.siege!.plays.find((p) => p.cardId === 'catapult')!.target).toBe('tower');
+    s = resolveTo(s, 3);
+    expect(s.towers.SE!.hp).toBe(2);
+    s = resolveRound(s);
+    // Round 2: the catapult stays on the board and keeps firing.
+    s = planAll(s, [ADV('S'), ADV('S'), ADV('S')].map((c) => ({ ...c, fallback: true })));
+    s = resolveTo(s, 3);
+    expect(s.towers.SE).toBeNull();
+    s = resolveRound(s);
+    s = planAll(s, [ADV('S'), ADV('S'), ADV('S')].map((c) => ({ ...c, fallback: true })));
+    const wall = s.walls.S.hp;
+    s = resolveTo(s, 3);
+    expect(s.walls.S.hp).toBe(wall - 1);
+  });
+
+  it('a Siege Tower shelters troops in its approach from ranged fire', () => {
+    const setup = (withTower: boolean) => siege((x) => {
+      x.towers.SE = { uid: 900, buildingId: 'stone_tower', hp: 6, maxHp: 6 };
+      x.towers.SW = { uid: 901, buildingId: 'stone_tower', hp: 6, maxHp: 6 };
+      if (withTower) x.engines.push({ uid: 800, cardId: 'siege_tower', lane: 'S', hp: 4, target: 'wall' });
+    });
+    // 2 footmen in the South approach; two stone towers fire 4 shots.
+    const open = resolveTo(planAll(setup(false), [ADV('S'), ADV('S'), ADV('S')]), 3);
+    expect(util.troopsAt(open, 'warlord', 'S', 'approach').length).toBe(0);
+    const covered = resolveTo(planAll(setup(true), [ADV('S'), ADV('S'), ADV('S')]), 3);
+    expect(util.troopsAt(covered, 'warlord', 'S', 'approach').length).toBe(2);
+    expect(covered.log.some((l) => l.text.includes('shelters 2 troop'))).toBe(true);
   });
 
   it('Burning Oil destroys an engine', () => {

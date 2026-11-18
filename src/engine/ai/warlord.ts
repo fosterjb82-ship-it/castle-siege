@@ -4,7 +4,7 @@ import { canUseFallback, handSize } from '../siege';
 import type { Action, CardPlanInput, GameState, Lane, SlotRef, StructureKind } from '../types';
 import { CHARACTERS, LANES } from '../types';
 import {
-  countBuilding, hasBuilding, mainCampLane, supplyRating, totalDefenderStrength,
+  cornersCovering, countBuilding, hasBuilding, mainCampLane, supplyRating, totalDefenderStrength,
   totalWarlordStrength, troopsAt, warlordTroopCount,
 } from '../util';
 import { aiRng, warlordTargetLane } from './common';
@@ -72,8 +72,9 @@ export function warlordCardValue(s: GameState, cardId: string, target: Lane): nu
   const c = card(cardId);
   const moat = s.moats[target];
   switch (c.id) {
-    case 'battering_ram': return moat ? 2 : 7;
-    case 'siege_tower': return moat ? 2 : 6;
+    case 'battering_ram': return moat ? 2 : 7.5;
+    case 'catapult': return coveringTowers(s, target) ? 6.5 : 2.5;
+    case 'siege_tower': return moat ? 4 : 6.5; // shelter still works behind a moat
     case 'trebuchet': return 6;
     case 'ladders': return 4;
     case 'sappers': return 5;
@@ -236,11 +237,16 @@ function warlordSiegePlan(s: GameState): Action {
   return { type: 'planSiege', actor: 'warlord', cards: cards.slice(0, need), moves };
 }
 
+function coveringTowers(s: GameState, lane: Lane): number {
+  return cornersCovering(lane).filter((c) => s.towers[c]).length;
+}
+
 function planCard(s: GameState, cardId: string, lane: Lane): CardPlanInput {
   const c = card(cardId);
   const p: CardPlanInput = { cardId, lane };
   if (c.target === 'any') p.target = bestAssaultTarget(s, lane);
-  if (c.id === 'trebuchet') p.target = 'wall';
+  const eng = c.effects.find((e) => e.type === 'engine');
+  if (eng?.canHitTowers) p.target = eng.target === 'tower' && coveringTowers(s, lane) ? 'tower' : 'wall';
   if (c.effects.some((e) => e.type === 'peekHand')) p.spyTarget = CHARACTERS[(s.log.length + lane.charCodeAt(0)) % 4];
   return p;
 }

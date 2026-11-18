@@ -277,11 +277,12 @@
         "target": "gate",
         "attack": 3,
         "hp": 3,
-        "blockedByMoat": true
+        "blockedByMoat": true,
+        "defensePierce": 2
       }
     ],
     "copies": 3,
-    "text": "Engine. Attacks the gate for 3 every round. Blocked by a moat."
+    "text": "Engine. Attacks the gate for 3 every round, ignoring up to 2 of the gate's Defense. Blocked by a moat."
   },
   {
     "id": "ladders",
@@ -317,11 +318,12 @@
         "target": "wall",
         "attack": 3,
         "hp": 4,
-        "blockedByMoat": true
+        "blockedByMoat": true,
+        "shelter": 4
       }
     ],
     "copies": 2,
-    "text": "Engine. Attacks the wall for 3 every round. Blocked by a moat."
+    "text": "Engine. Attacks the wall for 3 every round. Shelters up to 4 Warlord troops in its approach from ranged fire. Blocked by a moat (its shelter still works)."
   },
   {
     "id": "trebuchet",
@@ -336,6 +338,7 @@
         "type": "engine",
         "target": "wall",
         "attack": 2,
+        "towerAttack": 2,
         "hp": 3,
         "ranged": true,
         "canHitTowers": true
@@ -343,5 +346,27 @@
     ],
     "copies": 2,
     "text": "Ranged engine. 2 damage to the wall (or a tower covering the lane) every round, ignoring Defense. Ignores moats."
+  },
+  {
+    "id": "catapult",
+    "name": "Catapult",
+    "side": "warlord",
+    "deck": "engines",
+    "speed": "ranged",
+    "laneRule": "any",
+    "target": "tower",
+    "effects": [
+      {
+        "type": "engine",
+        "target": "tower",
+        "attack": 1,
+        "towerAttack": 2,
+        "hp": 3,
+        "ranged": true,
+        "canHitTowers": true
+      }
+    ],
+    "copies": 3,
+    "text": "Ranged engine. Every round, 2 damage to a tower covering this lane (ignoring Defense). With no tower in range, 1 damage to the wall. Ignores moats."
   }
 ]

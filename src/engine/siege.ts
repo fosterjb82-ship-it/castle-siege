@@ -116,8 +116,11 @@ export function doPlanSiege(s: GameState, a: Extract<Action, { type: 'planSiege'
     if (err) fail(err);
     const play: SiegePlay = { actor: a.actor, cardId: c.id, lane: cp.lane };
     if (fb) play.fallback = true;
-    if (c.target === 'any' || c.id === 'trebuchet') play.target = cp.target ?? (c.id === 'trebuchet' ? 'wall' : 'gate');
+    const engFx = c.effects.find((e) => e.type === 'engine');
+    if (c.target === 'any') play.target = cp.target ?? 'gate';
+    if (engFx?.canHitTowers) play.target = cp.target ?? engFx.target;
     if (c.target === 'any' && play.target === 'tower') fail('That card cannot target a tower');
+    if (engFx?.canHitTowers && play.target === 'gate') fail(`${c.name} targets a wall or a tower`);
     if (c.effects.some((e) => e.type === 'peekHand' && e.target === 'defender'))
       play.spyTarget = cp.spyTarget ?? 'lord';
     plays.push(play);
@@ -228,7 +231,8 @@ function stepReveal(s: GameState) {
     const eng = card(p.cardId).effects.find((e) => e.type === 'engine');
     if (eng) {
       s.engines.push({ uid: uid(s), cardId: p.cardId, lane: p.lane, hp: eng.hp, target: (p.target as any) ?? eng.target });
-      log(s, `A ${card(p.cardId).name} rolls up to the ${laneName(p.lane)} ${eng.target}.`);
+      const tgt = (p.target as string | undefined) ?? eng.target;
+      log(s, `A ${card(p.cardId).name} rolls up to the ${laneName(p.lane)} ${tgt === 'tower' ? 'towers' : tgt}.`);
     }
     if (sideOf(p.actor) === 'warlord') sg.mods.underAttack[p.lane] = true;
     // Round-long modifiers that are not tied to a step.
@@ -306,12 +310,31 @@ function defenderTargets(s: GameState, lane: Lane): Target[] {
   return out;
 }
 
-/** Only attacking troops can be targeted: troops inside a bailey, or in the approach of a lane under attack. */
-function warlordTargets(s: GameState, lane: Lane, approachOnly = false): Target[] {
+/** How many approach troops the lane's Siege Towers can shelter from ranged fire. */
+export function shelterCapacity(s: GameState, lane: Lane): number {
+  return s.engines.filter((e) => e.lane === lane)
+    .reduce((a, e) => a + (card(e.cardId).effects.find((x) => x.type === 'engine')?.shelter ?? 0), 0);
+}
+
+/** Approach troops riding inside Siege Towers: the strongest ones, up to capacity. */
+export function shelteredTroops(s: GameState, lane: Lane): Set<number> {
+  const cap = shelterCapacity(s, lane);
+  if (!cap) return new Set();
+  const inApproach = troopsAt(s, 'warlord', lane, 'approach')
+    .sort((a, b) => troopStrength(s, b) - troopStrength(s, a) || a.uid - b.uid);
+  return new Set(inApproach.slice(0, cap).map((t) => t.uid));
+}
+
+/**
+ * Only attacking troops can be targeted: troops inside a bailey, or in the approach of a lane under attack.
+ * With `asTargets`, troops sheltered by a Siege Tower are left out (they can't be shot, but can still shoot).
+ */
+function warlordTargets(s: GameState, lane: Lane, approachOnly = false, asTargets = true): Target[] {
   const attacking = laneUnderAttack(s, lane);
+  const sheltered = asTargets ? shelteredTroops(s, lane) : new Set<number>();
   return s.troops
     .filter((t) => t.side === 'warlord' && t.lane === lane && (!approachOnly || t.zone === 'approach')
-      && (t.zone === 'bailey' || attacking))
+      && (t.zone === 'bailey' || attacking) && !sheltered.has(t.uid))
     .map((t) => ({ kind: 'troop', t }) as Target);
 }
 
@@ -413,6 +436,8 @@ function stepRanged(s: GameState) {
   const resupply = sg.abilities.quartermasterResupply;
   const bonus = (lane: Lane) => (resupply === lane ? RULES.quartermasterResupply.bonus : 0);
   for (const lane of LANES) {
+    const sheltered = laneUnderAttack(s, lane) ? shelteredTroops(s, lane).size : 0;
+    if (sheltered) log(s, `🛡 Siege Tower shelters ${sheltered} troop(s) in the ${laneName(lane)} approach from ranged fire.`);
     const enemies = warlordTargets(s, lane).length;
     if (enemies) {
       for (const c of cornersCovering(lane)) {
@@ -430,7 +455,7 @@ function stepRanged(s: GameState) {
         shots.push({ lane, points: mh + bonus(lane), source: `Gatehouse murder holes (${laneName(lane)})`, at: 'warlordApproach' });
     }
     // Warlord crossbows
-    const xb = warlordTargets(s, lane).map((x) => (x as { t: Troop }).t).filter((t) => troopDef(t.type).ranged);
+    const xb = warlordTargets(s, lane, false, false).map((x) => (x as { t: Troop }).t).filter((t) => troopDef(t.type).ranged);
     const xp = xb.reduce((a, t) => a + (troopDef(t.type).ranged ?? 0), 0);
     if (xp && defenderTargets(s, lane).length) shots.push({ lane, points: xp, source: `Crossbowmen fire into the ${laneName(lane)} bailey`, at: 'defender' });
   }
@@ -439,11 +464,11 @@ function stepRanged(s: GameState) {
     if (sideOf(p.actor) === 'defender') shots.push({ lane: p.lane, points: e.amount + bonus(p.lane), source: card(p.cardId).name, at: 'warlordApproach' });
     else shots.push({ lane: p.lane, points: e.amount, source: card(p.cardId).name, at: 'defender' });
   }
-  // Trebuchets fire this step.
-  const trebShots: { lane: Lane; amount: number; target: string }[] = [];
+  // Ranged engines (Trebuchets, Catapults) fire this step.
+  const trebShots: { lane: Lane; amount: number; towerAmount: number; target: string; name: string }[] = [];
   for (const en of s.engines) {
     const e = card(en.cardId).effects.find((x) => x.type === 'engine');
-    if (e?.ranged) trebShots.push({ lane: en.lane, amount: e.attack, target: en.target });
+    if (e?.ranged) trebShots.push({ lane: en.lane, amount: e.attack, towerAmount: e.towerAttack ?? e.attack, target: en.target, name: card(en.cardId).name });
   }
   // Burning oil destroys engines (simultaneous with trebuchet fire).
   const oil: Lane[] = [];
@@ -456,16 +481,17 @@ function stepRanged(s: GameState) {
   }
   for (const t of trebShots) {
     if (t.target === 'tower') {
-      const corner = cornersCovering(t.lane).filter((c) => s.towers[c]).sort((a, b) => s.towers[b]!.hp - s.towers[a]!.hp)[0];
+      // Focus fire: the most damaged tower covering the lane.
+      const corner = cornersCovering(t.lane).filter((c) => s.towers[c]).sort((a, b) => s.towers[a]!.hp - s.towers[b]!.hp)[0];
       if (corner) {
         const tw = s.towers[corner]!;
-        tw.hp -= t.amount;
-        log(s, `Trebuchet: ${t.amount} damage to the ${corner} ${building(tw.buildingId).name} → ${Math.max(0, tw.hp)}/${tw.maxHp}.`);
+        tw.hp -= t.towerAmount;
+        log(s, `${t.name}: ${t.towerAmount} damage to the ${corner} ${building(tw.buildingId).name} → ${Math.max(0, tw.hp)}/${tw.maxHp}.`);
         if (tw.hp <= 0) { s.towers[corner] = null; log(s, `💥 The ${corner} tower collapses!`); }
         continue;
       }
     }
-    if (!s.breached[t.lane]) damageStructure(s, t.lane, 'wall', t.amount, 'Trebuchet');
+    if (!s.breached[t.lane]) damageStructure(s, t.lane, 'wall', t.amount, t.name);
   }
   for (const lane of oil) {
     const target = s.engines.filter((e) => e.lane === lane).sort((a, b) => engineAttack(b) - engineAttack(a))[0];
@@ -496,6 +522,7 @@ function stepEngines(s: GameState) {
     if (s.breached[lane]) continue;
     for (const kind of ['gate', 'wall'] as StructureKind[]) {
       let total = 0;
+      let pierce = 0;
       const names: string[] = [];
       for (const en of s.engines.filter((x) => x.lane === lane && x.target === kind)) {
         const e = card(en.cardId).effects.find((x) => x.type === 'engine')!;
@@ -507,11 +534,12 @@ function stepEngines(s: GameState) {
         let atk = e.attack;
         if (en.cardId === 'battering_ram') atk -= building(s.walls[lane].buildingId).structure?.ramReduction ?? 0;
         total += Math.max(0, atk);
+        pierce = Math.max(pierce, e.defensePierce ?? 0);
         names.push(card(en.cardId).name);
         if (e.oneUse) used.push(en.uid);
       }
       if (!names.length) continue;
-      const def = structDefense(s, lane, kind);
+      const def = Math.max(0, structDefense(s, lane, kind) - pierce);
       const dmg = Math.max(0, total - def);
       if (dmg > 0) damageStructure(s, lane, kind, dmg, `${names.join(' + ')} (${total} vs Defense ${def})`);
       else log(s, `${names.join(' + ')} (${total}) can't get past the ${laneName(lane)} ${kind}'s Defense ${def}.`);

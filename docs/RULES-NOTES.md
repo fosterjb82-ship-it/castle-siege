@@ -38,7 +38,7 @@ The spec (`docs/GDD.md`, v0.1) leaves some details open. This file lists every p
   Without this rule, towers shot every Warlord troop on the map each round, and the whole army died in the first Ranged step. Feints now matter, because a feint card exposes that lane's troops.
 - An assault needs Warlord troops in that approach. Attack cards in a lane with no troops do nothing.
 - **Assault target:** troops attack the Gate unless the strongest attack card played in that lane targets the Wall. Cards with `target: any` (such as Advance and the Assaults) choose gate or wall when played.
-- **Engines (step 3):** damage = max(0, total engine attack on that structure − the structure's Defense). Defender troops and card bonuses don't reduce engine damage; troops can't stop a ram. Rams deal −1 in a lane with a Fortified Stone Wall (the data's `ramReduction`). Ladders are used up after one attack. Trebuchets fire in the Ranged step, ignore Defense and moats, and can target a tower that covers the lane.
+- **Engines (step 3):** damage = max(0, total engine attack on that structure − (the structure's Defense − the best `defensePierce` among those engines)). Defender troops and card bonuses don't reduce engine damage; troops can't stop a ram. Rams deal −1 in a lane with a Fortified Stone Wall (the data's `ramReduction`). Ladders are used up after one attack. Trebuchets fire in the Ranged step, ignore Defense and moats, and can target a tower that covers the lane.
 - **Ranged damage** is dealt one point at a time, each to the enemy most likely to fall (lowest HP, then strongest). All ranged fire in a step is simultaneous: troops killed in that step still fire.
 - Quartermaster Resupply gives +1 damage to **each** defender ranged effect in that lane: each tower, the archer group, murder holes and ranged cards.
 - Troop cards deploy at their own speed. Archer Company and Crossbow Line deploy in the Ranged step and fire that round; the others deploy at Melee.
@@ -51,6 +51,12 @@ The spec (`docs/GDD.md`, v0.1) leaves some details open. This file lists every p
 - Scout Report and Spy in the Walls show one random card from the target's hand. A Decoy Banners card shows as "Advance".
 - A defeated Knight sits out the next round, then returns to the Keep at full HP.
 - Sally Forth only works if the Knight is in that bailey when Melee resolves.
+
+## Siege engines (§14, extended after the beta build)
+- **[Beta change] Battering Ram pierces gates.** It ignores up to 2 of the gate's Defense (`defensePierce: 2`), so 3 damage to a Wooden or Iron-bound Gate and 2 to a Gatehouse. Before this, a Gatehouse (Defense 3) made a lone ram useless. It is still blocked by a moat unless a Bridge is played. Several rams pool their attack and use the highest pierce.
+- **[Beta change] Siege Tower shelters troops.** While a Siege Tower stands in a lane, up to 4 Warlord troops in that approach (`shelter: 4`; the strongest troops first) can't be targeted by defender ranged fire: towers, archers, murder holes, and the Murder Holes card. Sheltered crossbowmen still shoot. Melee casualties are unaffected. The shelter works even when a moat stops the tower from attacking the wall. Several Siege Towers add their capacity together.
+- **[New card] Catapult** (Siege Engines deck, 3 copies, ranged speed, ignores moats). Every round it deals 2 damage to a tower covering its lane, focusing on the most damaged one and ignoring Defense. A tower at 0 HP collapses and its slot empties. With no tower in range it deals 1 damage to the wall. When played, the Warlord picks the tower or the wall as its target.
+- The Trebuchet stays the wall breaker (2 to the wall) and can still be aimed at a tower. Both ranged engines use the same rules (`ranged`, `canHitTowers`, `towerAttack` in the card data).
 
 ## Fighting inside the walls (§10)
 - **[Beta change] Bailey fights are bloody.** The loser of a fight inside a breached bailey loses 1 troop per `rules.casualties.baileyPerMargin` (3) points of margin, minimum 1. Assaults on the walls still cost at most 1 troop, since the walls protect the defenders.

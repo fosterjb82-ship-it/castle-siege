@@ -22,6 +22,19 @@ Most drafted cards: Footmen Wave, Battering Ram, Raider Band, Burning Oil, Trebu
 
 Caveat: the defender AI plays well. It concentrates every card, troop and the Knight on the visibly threatened lane. Human players may do worse, so try a few human co-op games before drawing firm conclusions.
 
+## Update: siege engines (Catapult, sheltering Siege Tower, piercing Ram)
+
+`npm run sim -- --games 100` (Normal, seeds 1–100), compared with the table above:
+
+| | Before | After |
+|---|---|---|
+| Defender win rate | 100% | 99% (first Warlord win by Keep assault) |
+| Games with a breach | 58% | 66% |
+| Ended by "Warlord has no troops left" | 40% | 25% |
+| Avg Keep HP at end | 7.99 | 7.85 |
+
+The Catapult became the 3rd most drafted card. Armies now survive longer: tower attrition is lower and more sieges reach round 5. But breaches still rarely turn into Keep damage. The structural issues below (no defender troop cap, a visible attack lane) are still the main levers.
+
 ## What the simulator found, and what changed
 
 Each of these was found by running the sim on the spec's rules as written. The fixes are in `data/rules.json` and are explained in `RULES-NOTES.md`.

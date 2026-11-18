@@ -51,13 +51,14 @@ export function SiegePlanPanel({ s, actor, dispatch }: { s: GameState; actor: Ac
   const pickId = pick === 'fallback' ? fallbackCard(actor) : pick !== null ? hand[pick] : null;
   const pc = pickId ? card(pickId) : null;
   const laneErr = pc ? cardPlayError(s, actor, pc, lane) : null;
+  const towerCapable = !!pc?.effects.some((e) => e.type === 'engine' && e.canHitTowers);
 
   const addPlay = () => {
     if (!pickId || laneErr) return;
     const p: DraftPlay = { cardId: pickId, lane, handIndex: pick === 'fallback' ? null : (pick as number) };
     if (pick === 'fallback') p.fallback = true;
     if (pc!.target === 'any') p.target = target === 'tower' ? 'gate' : target;
-    if (pc!.id === 'trebuchet') p.target = target === 'gate' ? 'wall' : target;
+    if (towerCapable) p.target = target === 'gate' ? (pc!.effects.find((e) => e.type === 'engine')!.target) : target;
     if (pc!.target === 'any' && pc!.effects.some((e) => e.type === 'repair')) p.target = target === 'tower' ? 'wall' : target;
     if (pc!.effects.some((e) => e.type === 'peekHand' && e.target === 'defender')) p.spyTarget = spy;
     setPlays([...plays, p]);
@@ -95,9 +96,9 @@ export function SiegePlanPanel({ s, actor, dispatch }: { s: GameState; actor: Ac
       {pc && (
         <div className="row section">
           <b>{pc.name}</b> → <LaneSelect value={lane} onChange={setLane} />
-          {(pc.target === 'any' || pc.id === 'trebuchet') && (
+          {(pc.target === 'any' || towerCapable) && (
             <select value={target} onChange={(e) => setTarget(e.target.value as any)}>
-              {pc.id === 'trebuchet' ? <><option value="wall">wall</option><option value="tower">tower</option></> : <><option value="gate">gate</option><option value="wall">wall</option></>}
+              {towerCapable ? <><option value="gate">default ({pc.effects.find((e) => e.type === 'engine')!.target})</option><option value="wall">wall</option><option value="tower">tower</option></> : <><option value="gate">gate</option><option value="wall">wall</option></>}
             </select>
           )}
           {pc.effects.some((e) => e.type === 'peekHand' && e.target === 'defender') && (

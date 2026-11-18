@@ -177,10 +177,15 @@ export function Board({ s, viewer, selected, onSlot, highlightLanes = [] }: Boar
               const ey = h ? r.y + 62 : r.y + 340 + Math.floor(i / 2) * 50;
               return (
                 <g key={e.uid}>
-                  <title>{`${card(e.cardId).name} (target ${e.target})`}</title>
+                  <title>{`${card(e.cardId).name} (target ${e.target}) — ${card(e.cardId).text}`}</title>
                   <rect x={ex} y={ey} width={52} height={40} rx={5} fill="#6b3b1f" stroke="#e0a060" />
                   <text x={ex + 26} y={ey + 17} textAnchor="middle" style={{ fontSize: 15 }}>⚙️</text>
                   <text x={ex + 26} y={ey + 34} textAnchor="middle" style={{ fontSize: 10, fill: '#fff', fontWeight: 700 }}>{abbrev(card(e.cardId).name)}</text>
+                  {(card(e.cardId).effects.find((x) => x.type === 'engine')?.shelter ?? 0) > 0 && (
+                    <text x={ex + 48} y={ey + 12} textAnchor="end" style={{ fontSize: 10, fill: '#8fd0ff', fontWeight: 700 }}>
+                      🛡{card(e.cardId).effects.find((x) => x.type === 'engine')!.shelter}
+                    </text>
+                  )}
                 </g>
               );
             })}
