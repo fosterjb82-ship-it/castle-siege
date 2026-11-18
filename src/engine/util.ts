@@ -151,6 +151,13 @@ export function garrisonRoom(s: GameState): number {
   return Math.max(0, garrisonCapacity(s) - defenderTroopCount(s));
 }
 
+// ---------- Food ----------
+
+/** Food the garrison eats each siege round: 1 per `troopsPerFood` troops (rounded up). */
+export function foodUpkeep(s: GameState): number {
+  return Math.ceil(s.troops.filter((t) => t.side === 'defender').length / RULES.food.troopsPerFood);
+}
+
 // ---------- Troops ----------
 
 export function troopsAt(s: GameState, side: Side, lane: Lane, zone: 'bailey' | 'approach'): Troop[] {
@@ -170,6 +177,7 @@ export function troopStrength(s: GameState, t: Troop): number {
   if (t.side === 'defender') {
     if (hasBuilding(s, 'defender', 'garrison_hall')) str += building('garrison_hall').troopStrengthBonus ?? 1;
     for (const x of buildingsOf(s, 'defender')) if (x.b.buildingId === 'weaponsmith' && x.b.troopType === t.type) str += 1;
+    if (s.siege?.hungry) str -= RULES.food.hungerStrengthPenalty;
   } else {
     if (overSupplied(s)) str -= RULES.overSupplyStrengthPenalty;
     const cal = s.siege?.mods.caltrops[t.lane] ?? 0;
@@ -228,6 +236,7 @@ export function incomeFor(s: GameState, side: Side, ignoreHarass = false): Resou
     if (def.produces) addRes(inc, def.produces);
     if (side === 'defender' && def.id === 'market') inc.gold = (inc.gold ?? 0) + 1; // Quartermaster passive
   }
+  if (side === 'defender' && s.phase === 'siege' && !RULES.food.incomeDuringSiege) delete inc.food;
   if (side === 'warlord' && isWarlordAI(s)) {
     const m = (RULES.ai.difficultyIncome as any)[s.config.difficulty] ?? 1;
     for (const k of Object.keys(inc)) inc[k] = Math.round(inc[k] * m);

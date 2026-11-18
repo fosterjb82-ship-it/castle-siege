@@ -123,6 +123,20 @@
     "text": "+2 Gold per Collect."
   },
   {
+    "id": "granary",
+    "side": "defender",
+    "name": "Granary",
+    "slot": "bailey",
+    "category": "production",
+    "cost": {
+      "wood": 2
+    },
+    "produces": {
+      "food": 2
+    },
+    "text": "+2 Food per Collect (Build Phase only: the siege cuts off the fields)."
+  },
+  {
     "id": "barracks",
     "side": "defender",
     "name": "Barracks",

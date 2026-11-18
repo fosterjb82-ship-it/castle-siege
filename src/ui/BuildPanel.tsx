@@ -8,7 +8,7 @@ import { LANES } from '../engine';
 import { CardView } from './CardView';
 import { actorName, playerOf, resText } from './uiutil';
 
-const RES_D = ['stone', 'wood', 'gold'];
+const RES_D = ['stone', 'wood', 'gold', 'food'];
 const RES_W = ['supplies', 'timber', 'gold'];
 
 export function LaneSelect({ value, onChange, lanes = LANES }: { value: Lane; onChange: (l: Lane) => void; lanes?: Lane[] }) {

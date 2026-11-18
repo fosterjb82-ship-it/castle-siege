@@ -13,7 +13,7 @@ export type Mode = 'coop' | 'warlord';
 export const LANES: Lane[] = ['N', 'E', 'S', 'W'];
 export const CORNERS: Corner[] = ['NE', 'NW', 'SE', 'SW'];
 export const CHARACTERS: CharacterId[] = ['lord', 'architect', 'quartermaster', 'knight'];
-export const DEFENDER_RES = ['stone', 'wood', 'gold'] as const;
+export const DEFENDER_RES = ['stone', 'wood', 'gold', 'food'] as const;
 export const WARLORD_RES = ['supplies', 'timber', 'gold'] as const;
 
 export type Resources = Record<string, number>;
@@ -185,6 +185,8 @@ export interface SiegeState {
   rallyActive: Partial<Record<Lane, number>>; // Lord rally from the previous round
   rallyNext: Partial<Record<Lane, number>>;
   mods: RoundMods;
+  /** The garrison couldn't be fed this round: every defender troop −1 Strength. */
+  hungry?: boolean;
 }
 
 export interface RoundMods {

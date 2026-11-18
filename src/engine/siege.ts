@@ -7,7 +7,7 @@ import { CHARACTERS, LANES, RESOLVE_STEPS } from './types';
 import {
   addTroop, adjacent, baileyStrength, buildingsOf, cornersCovering, defendersIn, fail, hasBuilding, knightIn,
   laneBuildingAttack, log, removeTroop, sideOf, sumStrength, towerDefense, troopStrength, troopsAt, uid, weakest,
-  incomeFor, addRes, fmtRes, garrisonRoom,
+  incomeFor, addRes, fmtRes, garrisonRoom, foodUpkeep,
 } from './util';
 
 const NAME = (a: Actor) => (a === 'warlord' ? 'Warlord' : CHARACTER_DEFS[a].name);
@@ -39,7 +39,7 @@ export function startSiege(s: GameState) {
   }
   s.siege = {
     stage: 'plan', planned: [], plays: [], moves: [], abilities: {}, nextStep: 0,
-    rallyActive: {}, rallyNext: {}, mods: emptyMods(),
+    rallyActive: {}, rallyNext: {}, mods: emptyMods(), hungry: false,
   };
   beginSiegeRound(s);
 }
@@ -52,6 +52,7 @@ function beginSiegeRound(s: GameState) {
     const inc = incomeFor(s, side);
     addRes(s.stock[side], inc);
   }
+  feedGarrison(s);
   if (s.knight.downUntilSiegeRound !== null && s.siegeRound >= s.knight.downUntilSiegeRound) {
     s.knight = { lane: null, hp: RULES.knight.hp, downUntilSiegeRound: null };
     log(s, 'The Knight has recovered and returns to the Keep.');
@@ -65,6 +66,22 @@ function beginSiegeRound(s: GameState) {
   sg.rallyActive = sg.rallyNext;
   sg.rallyNext = {};
   sg.mods = emptyMods();
+}
+
+/** Start of each siege round: the garrison eats from the stores. Short on food → hungry this round. */
+function feedGarrison(s: GameState) {
+  const sg = s.siege!;
+  const need = foodUpkeep(s);
+  const have = s.stock.defender.food ?? 0;
+  if (have >= need) {
+    s.stock.defender.food = have - need;
+    sg.hungry = false;
+    if (need) log(s, `🍞 The garrison eats ${need} Food (${s.stock.defender.food} left in the stores).`);
+  } else {
+    s.stock.defender.food = 0;
+    sg.hungry = true;
+    log(s, `🥣 HUNGER! The stores can't feed the garrison (${have} of ${need} Food) — every defender troop has −${RULES.food.hungerStrengthPenalty} Strength this round.`, 'all', 'breach');
+  }
 }
 
 export function knightAvailable(s: GameState): boolean {

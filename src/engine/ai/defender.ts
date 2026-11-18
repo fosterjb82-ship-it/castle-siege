@@ -4,7 +4,7 @@ import { canUseFallback, cardPlayError, knightAvailable } from '../siege';
 import type { AbilityPlan, Action, CardPlanInput, CharacterId, GameState, Lane } from '../types';
 import { CHARACTERS, LANES } from '../types';
 import {
-  buildingsOf, countBuilding, cornersCovering, defendersIn, garrisonRoom, hasBuilding, mainCampLane, sumStrength, troopsAt,
+  buildingsOf, countBuilding, cornersCovering, defendersIn, garrisonRoom, hasBuilding, incomeFor, mainCampLane, sumStrength, troopsAt,
 } from '../util';
 import { aiRng, laneThreat, lanesByThreat } from './common';
 
@@ -13,6 +13,17 @@ const ORDER: CharacterId[] = ['lord', 'quartermaster', 'architect', 'knight'];
 function productionCount(s: GameState) {
   return buildingsOf(s, 'defender').filter((x) => building(x.b.buildingId).produces).length;
 }
+
+/** Food still needed to feed the expected garrison for the whole siege. */
+export function foodDeficit(s: GameState): number {
+  const expected = Math.max(defendersCount(s), garrisonCapacityOf(s));
+  const need = Math.ceil(expected / RULES.food.troopsPerFood) * RULES.siegeRounds;
+  const income = incomeFor(s, 'defender', true).food ?? 0;
+  const roundsLeft = s.phase === 'siege' ? 0 : s.finalBuildRound ? 0 : Math.max(1, RULES.ai.hornsByRound - s.round + 1);
+  return need - (s.stock.defender.food ?? 0) - income * roundsLeft;
+}
+const defendersCount = (s: GameState) => s.troops.filter((t) => t.side === 'defender').length;
+const garrisonCapacityOf = (s: GameState) => garrisonRoom(s) + defendersCount(s);
 
 function scoreBuild(s: GameState, a: Extract<Action, { type: 'build' }>): number {
   const id = a.buildingId;
@@ -24,6 +35,10 @@ function scoreBuild(s: GameState, a: Extract<Action, { type: 'build' }>): number
   switch (id) {
     case 'quarry': return prod < 5 && !s.finalBuildRound ? (early ? 7 : 3) - countBuilding(s, 'defender', 'quarry') : -1;
     case 'market': return prod < 5 && !s.finalBuildRound ? (early ? 7.5 : 3) - countBuilding(s, 'defender', 'market') * 1.5 : -1;
+    case 'granary': {
+      const d = foodDeficit(s);
+      return s.finalBuildRound ? -1 : d > 0 ? 6 + Math.min(d, 8) * 0.25 - countBuilding(s, 'defender', 'granary') * 1.5 : 0.5;
+    }
     case 'lumber_mill': return prod < 5 && !s.finalBuildRound ? (early ? 6 : 2) - countBuilding(s, 'defender', 'lumber_mill') * 2 : -1;
     case 'barracks': return hasBuilding(s, 'defender', 'barracks') ? -1 : s.round >= 2 || garrisonRoom(s) <= 1 ? 7 : 4;
     case 'garrison_hall': return s.round >= 4 ? 6 : 2;
@@ -93,9 +108,9 @@ function scoreAction(s: GameState, actor: CharacterId, a: Action, rnd: () => num
       const late = s.round >= 4 || s.finalBuildRound ? 1.5 : 0;
       return base + late - Math.max(0, deck - 3) * 0.8 + noise;
     }
-    case 'decree': return 6 + noise;
-    case 'requisition': return 0.5 + noise;
-    case 'trade': return 0.3 + noise;
+    case 'decree': return 6 + (a.resource === 'food' && foodDeficit(s) > 0 ? 1 : 0) + noise;
+    case 'trade': return (a.get === 'food' && s.finalBuildRound && foodDeficit(s) > 0 && a.give !== 'food' ? 3.5 : a.give === 'food' ? -1 : 0.3) + noise;
+    case 'requisition': return (a.get === 'food' && foodDeficit(s) > 2 ? 3 : a.give === 'food' ? -1 : 0.5) + noise;
     case 'raid': {
       const foes = troopsAt(s, 'warlord', a.lane, 'approach');
       const party = defendersIn(s, a.lane).filter((t) => a.troopUids.includes(t.uid));

@@ -2,7 +2,7 @@ import { CHARACTER_DEFS, card, laneName, pendingActors, util } from '../engine';
 import type { Actor, GameState, LogEntry, Resources, Side } from '../engine';
 
 export const SPEED_ICON: Record<string, string> = { scout: '🔍', ranged: '🏹', engine: '⚙️', melee: '⚔️', recovery: '✚' };
-export const RES_ICON: Record<string, string> = { stone: '🪨', wood: '🪵', gold: '🪙', supplies: '🍖', timber: '🌲' };
+export const RES_ICON: Record<string, string> = { stone: '🪨', wood: '🪵', gold: '🪙', supplies: '🍖', timber: '🌲', food: '🍞' };
 
 export function actorName(a: Actor): string {
   return a === 'warlord' ? 'Warlord' : CHARACTER_DEFS[a].name;

@@ -27,6 +27,7 @@ export function StockPanels({ s, viewer }: { s: GameState; viewer: Viewer }) {
         <ResTable stock={s.stock.defender} income={util.incomeFor(s, 'defender')} />
         <div className="section kv" style={{ fontSize: 12 }}>
           <span>Garrison</span><span>{util.defenderTroopCount(s)} / {util.garrisonCapacity(s)} troops (Str {util.totalDefenderStrength(s)})</span>
+          <span>Food upkeep</span><span title="Eaten at the start of each siege round: 1 Food per 3 troops. No Food comes in during the siege.">{util.foodUpkeep(s)}/siege round{s.siege?.hungry ? ' — HUNGRY (−1 Str)' : ''}</span>
           <span>Population</span><span title="Townsfolk who can be levied as Militia beyond the cap (Militia Levy)">{s.population ?? 0} townsfolk</span>
           <span>Knight</span><span>{s.knight.downUntilSiegeRound !== null ? 'recovering' : `HP ${s.knight.hp} · ${s.knight.lane ? `${s.knight.lane} bailey` : 'Keep'}`}</span>
         </div>
@@ -96,7 +97,7 @@ export function DebugPanel({ s, dispatch, reveal, setReveal, undo, canUndo, load
   const [json, setJson] = useState('');
   const [seed, setSeed] = useState(String(s.seed));
   const [msg, setMsg] = useState<string | null>(null);
-  const res = side === 'defender' ? ['stone', 'wood', 'gold'] : ['supplies', 'timber', 'gold'];
+  const res = side === 'defender' ? ['stone', 'wood', 'gold', 'food'] : ['supplies', 'timber', 'gold'];
   return (
     <div className="panel">
       <h3>🛠 Debug</h3>

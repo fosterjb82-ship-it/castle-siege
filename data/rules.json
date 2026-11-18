@@ -3,7 +3,8 @@
     "defender": {
       "stone": 4,
       "wood": 4,
-      "gold": 3
+      "gold": 3,
+      "food": 4
     },
     "warlord": {
       "supplies": 5,
@@ -15,7 +16,8 @@
     "defender": {
       "stone": 1,
       "wood": 1,
-      "gold": 1
+      "gold": 1,
+      "food": 1
     },
     "warlord": {
       "supplies": 1,
@@ -153,5 +155,10 @@
   "garrison": {
     "baseCapacity": 6,
     "startingPopulation": 6
+  },
+  "food": {
+    "troopsPerFood": 3,
+    "hungerStrengthPenalty": 1,
+    "incomeDuringSiege": false
   }
 }

@@ -34,6 +34,13 @@ The spec (`docs/GDD.md`, v0.1) leaves some details open. This file lists every p
 - **[Beta change] Population: the townsfolk.** The castle starts with `rules.garrison.startingPopulation` (6). **Militia Levy** turns townsfolk into Militia, using Population instead of capacity, so a levy can push the garrison over the cap. Once the town has no able-bodied folk left, levies raise nothing. Population doesn't grow.
 - Troops already over the cap (from levies) stay; you just can't train more until losses bring the count under the cap.
 
+## Food (added after the beta build)
+- **[Beta change] Food is a fourth defender resource.** It starts at 4. The Keep produces +1 per Collect and a **Granary** (bailey building, 2 Wood) +2. Food can be traded, Decreed and Requisitioned like the other resources.
+- **The siege cuts off the fields.** No Food is collected during the Siege Phase (`rules.food.incomeDuringSiege: false`). The castle lives on what it stored.
+- **Upkeep:** at the start of each siege round the garrison eats 1 Food per `rules.food.troopsPerFood` (3) defender troops, rounded up. The Knight eats at the lords' table and doesn't count.
+- **Hunger:** if the stores can't cover the upkeep, the remaining Food is eaten and the garrison is hungry for that round. Every defender troop has −`rules.food.hungerStrengthPenalty` (1) Strength, minimum 0. This mirrors the Warlord's over-supply penalty.
+- Interactions: more troops (including levied Militia) mean more mouths. The Warlord's existing Harass can stop a Granary producing (the AI Warlord prefers to harass Granaries).
+
 ## War Horns (§9)
 - The AI also sounds the horns by round `rules.ai.hornsByRound` (6). The spec's trigger (army Strength ≥ defender Strength + 6) almost never fires, because defenders out-build the Warlord.
 

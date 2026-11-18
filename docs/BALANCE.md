@@ -22,6 +22,12 @@ Most drafted cards: Footmen Wave, Battering Ram, Raider Band, Burning Oil, Trebu
 
 Caveat: the defender AI plays well. It concentrates every card, troop and the Knight on the visibly threatened lane. Human players may do worse, so try a few human co-op games before drawing firm conclusions.
 
+## Update: food
+
+Normal, 100 games: defender win rate **99%** (1 Warlord win), breaches 62%, Keep HP at end 7.78 (was 7.97).
+
+Food creates real pressure. AI defenders went hungry in 21 of 40 sampled games, about 0.6 hungry siege rounds per game. They mostly got by on starting Food, Keep income and trades, building only 0.25 Granaries per game; human players may plan differently. Tunables: `rules.food.troopsPerFood` (lower = hungrier), the starting Food in `rules.startingResources.defender.food`, Granary output, and `rules.food.hungerStrengthPenalty`. A desertion rule (losing troops after repeated hunger) is a possible later step, but it is not implemented.
+
 ## Update: defender troop cap (Garrison Capacity + Population)
 
 Normal, 100 games: defender win rate **100%**, breaches 66%, Keep HP at end 7.97. A tighter cap (base 4) and a looser one (base 8) gave the same result over 50 games each.

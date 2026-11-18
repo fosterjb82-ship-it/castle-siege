@@ -179,7 +179,10 @@ function warlordBuildAction(s: GameState): Action {
   list.push(...buildIn(s, 'siege_camp', econLanes));
   if (troopCards < 8) list.push({ type: 'draft', actor: 'warlord', deck: 'troops' });
   if (engines < 6) list.push({ type: 'draft', actor: 'warlord', deck: 'engines' });
-  for (const l of LANES) list.push({ type: 'harass', lane: l });
+  for (const l of LANES) {
+    const granary = s.baileys[l].find((b) => b?.buildingId === 'granary' && !s.harassed.includes(b.uid));
+    list.push(granary ? { type: 'harass', lane: l, buildingUid: granary.uid } : { type: 'harass', lane: l });
+  }
   list.push({ type: 'draft', actor: 'warlord', deck: 'tactics' });
   const a = firstLegal(s, list);
   if (a) return a;
