@@ -25,7 +25,7 @@ export function turn(s: GameState, c: 'lord' | 'architect' | 'quartermaster' | '
 
 export function passAll(s: GameState): GameState {
   // Finish the current build round with every actor passing.
-  while (s.phase === 'build' && s.step !== 'hornsDecision') {
+  while ((s.phase === 'build' || s.phase === 'blockade') && s.step !== 'hornsDecision' && s.step !== 'assaultDecision') {
     if (s.step === 'chooseCharacter') {
       const c = (['lord', 'architect', 'quartermaster', 'knight'] as const).find((x) => !s.turn.done.includes(x))!;
       s = applyAction(s, { type: 'chooseCharacter', character: c });
@@ -37,10 +37,14 @@ export function passAll(s: GameState): GameState {
   return s;
 }
 
+/** Straight to the Assault (internal phase 'siege'): horns, then the Assault is ordered at once. */
 export function toSiege(s: GameState): GameState {
-  s = applyAction(s, { type: 'debugSkipToHorns' });
-  while (s.phase === 'build') s = passAll(s);
-  return s;
+  return applyAction(s, { type: 'debugSkipToAssault' });
+}
+
+/** Sound the horns and stop at the first Siege (blockade) round. */
+export function toBlockade(s: GameState): GameState {
+  return applyAction(s, { type: 'debugSkipToHorns' });
 }
 
 export const L = (x: string) => x as Lane;

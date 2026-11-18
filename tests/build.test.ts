@@ -30,7 +30,7 @@ describe('build phase turn structure', () => {
     expect(s.round).toBe(5);
   });
 
-  it('sounds the horns automatically after round 8 and gives a final round without Warlord actions', () => {
+  it('sounds the horns automatically after round 8, starting the Siege (blockade) phase and the relief clock', () => {
     let s = afterSetup();
     while (s.round < 8 || s.step !== 'chooseCharacter') {
       s = passAll(s);
@@ -38,11 +38,8 @@ describe('build phase turn structure', () => {
     }
     s = passAll(s);
     expect(s.hornsSounded).toBe(true);
-    expect(s.finalBuildRound).toBe(true);
-    s = act(turn(s, 'lord'), { type: 'endTurn', actor: 'lord' });
-    expect(s.step).toBe('chooseCharacter'); // no Warlord response
-    s = passAll(s);
-    expect(s.phase).toBe('siege');
+    expect(s.phase).toBe('blockade');
+    expect(s.relief!.roundsLeft).toBe(7);
   });
 });
 

@@ -33,6 +33,10 @@ export interface SimSummary {
   mostDrafted: [string, number][];
   mostPlayed: [string, number][];
   raids: { won: number; lost: number };
+  avgBlockadeRounds: number;
+  assaultForcedRate: number;
+  avgHungryRounds: number;
+  avgStratagems: number;
 }
 
 export function simulate(games: number, difficulty: Difficulty = 'normal', firstSeed = 1): SimSummary {
@@ -42,6 +46,7 @@ export function simulate(games: number, difficulty: Difficulty = 'normal', first
   const drafted: Record<string, number> = {};
   const played: Record<string, number> = {};
   const raids = { won: 0, lost: 0 };
+  let blockade = 0, forced = 0, hungry = 0, strat = 0;
   for (let i = 0; i < games; i++) {
     const s = simulateGame(firstSeed + i, difficulty);
     if (s.winner === 'defender') dWins++;
@@ -54,6 +59,8 @@ export function simulate(games: number, difficulty: Difficulty = 'normal', first
     for (const [k, v] of Object.entries(s.stats.drafted)) drafted[k] = (drafted[k] ?? 0) + v;
     for (const [k, v] of Object.entries(s.stats.cardsPlayed)) played[k] = (played[k] ?? 0) + v;
     raids.won += s.stats.raids.won; raids.lost += s.stats.raids.lost;
+    blockade += s.stats.blockadeRounds; forced += s.stats.assaultForced ? 1 : 0;
+    hungry += s.stats.hungryRounds; strat += s.stats.stratagems;
   }
   const top = (r: Record<string, number>) =>
     Object.entries(r).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => [card(k).name, v] as [string, number]);
@@ -72,6 +79,10 @@ export function simulate(games: number, difficulty: Difficulty = 'normal', first
     mostDrafted: top(drafted),
     mostPlayed: top(played),
     raids,
+    avgBlockadeRounds: blockade / games,
+    assaultForcedRate: forced / games,
+    avgHungryRounds: hungry / games,
+    avgStratagems: strat / games,
   };
 }
 
@@ -82,8 +93,11 @@ export function formatSummary(r: SimSummary): string {
     `Defender win rate:          ${pct(r.defenderWinRate)}  (${r.defenderWins} D / ${r.warlordWins} W)`,
     `Avg War Horns round:        ${r.avgHornsRound.toFixed(2)}`,
     `Games with a breach:        ${r.gamesWithBreach} (${pct(r.gamesWithBreach / r.games)})`,
-    `Avg siege round of breach:  ${r.avgFirstBreachSiegeRound?.toFixed(2) ?? '—'}`,
-    `Avg siege rounds played:    ${r.avgSiegeRoundsPlayed.toFixed(2)}`,
+    `Avg Assault round of breach: ${r.avgFirstBreachSiegeRound?.toFixed(2) ?? '—'} (0 = breached by bombardment)`,
+    `Avg Siege (blockade) rounds: ${r.avgBlockadeRounds.toFixed(2)}  (Assault forced by the clock in ${pct(r.assaultForcedRate)})`,
+    `Avg Assault rounds played:  ${r.avgSiegeRoundsPlayed.toFixed(2)}`,
+    `Avg hungry rounds:          ${r.avgHungryRounds.toFixed(2)}`,
+    `Avg stratagems played:      ${r.avgStratagems.toFixed(2)}`,
     `Avg Keep HP at end:         ${r.avgKeepHpAtEnd.toFixed(2)}`,
     `Breaches by lane:           ${Object.entries(r.breachesByLane).map(([k, v]) => `${k} ${v}`).join(', ')}`,
     `Raids (won/lost):           ${r.raids.won}/${r.raids.lost}`,

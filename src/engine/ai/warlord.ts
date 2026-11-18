@@ -86,6 +86,8 @@ export function warlordCardValue(s: GameState, cardId: string, target: Lane): nu
     case 'bribe_the_guard': return 4;
     case 'bridge': return moat ? 5 : 1;
     case 'decoy_banners': return 1.5;
+    case 'night_march': return s.phase === 'siege' ? 0.3 : 5;
+    case 'campfires': return s.phase === 'siege' ? 0.3 : 3.5;
     case 'spy_in_the_walls': return 1;
     case 'advance': return 2;
     default:
@@ -115,6 +117,8 @@ export function warlordAI(s: GameState): Action {
     return ready ? { type: 'soundHorns' } : { type: 'holdHorns' };
   }
   if (s.step === 'siege') return warlordSiegePlan(s);
+  if (s.step === 'assaultDecision') return warlordAssaultDecision(s);
+  if (s.phase === 'blockade') return warlordBlockadeAction(s);
   return warlordBuildAction(s);
 }
 
@@ -147,6 +151,8 @@ function warlordBuildAction(s: GameState): Action {
   // Drafting quota: about two siege cards per build round from round 2.
   const deckSize = s.siegeDecks.warlord.length + s.hands.warlord.length;
   const wantDeck = 3 + Math.max(0, s.round - 1) * 2;
+  const hasStratagem = [...s.siegeDecks.warlord].some((c) => card(c).effects.some((e) => e.type === 'stratagem'));
+  if (s.round >= 3 && !hasStratagem && rnd() < 0.5) list.push({ type: 'draft', actor: 'warlord', deck: 'tactics' });
   if (deckSize < wantDeck) {
     if (engines < 5) list.push({ type: 'draft', actor: 'warlord', deck: 'engines' });
     if (troopCards < 5) list.push({ type: 'draft', actor: 'warlord', deck: 'troops' });
@@ -188,6 +194,60 @@ function warlordBuildAction(s: GameState): Action {
   if (a) return a;
   const t = firstLegal(s, [...tradeFor(s, 'gold'), ...tradeFor(s, 'timber'), ...tradeFor(s, 'supplies')]);
   return t ?? { type: 'endTurn', actor: 'warlord' };
+}
+
+// ---------------- Siege (blockade) ----------------
+
+function deckHas(s: GameState, id: string) {
+  return s.siegeDecks.warlord.includes(id);
+}
+
+function warlordBlockadeAction(s: GameState): Action {
+  const target = warlordTargetLane(s);
+  const list: Action[] = [];
+  const enginesHere = (id: string) => s.engines.filter((e) => e.lane === target && e.cardId === id).length;
+  // 1. Bombardment: knock down the towers covering the target, then wear the wall.
+  if (coveringTowers(s, target) && deckHas(s, 'catapult') && enginesHere('catapult') < 2)
+    list.push({ type: 'emplace', cardId: 'catapult', lane: target, target: 'tower' });
+  if (deckHas(s, 'trebuchet') && enginesHere('trebuchet') < 1)
+    list.push({ type: 'emplace', cardId: 'trebuchet', lane: target, target: 'wall' });
+  // 2. Deception: march the army into the target lane by night; light campfires elsewhere.
+  if (deckHas(s, 'night_march')) {
+    for (const from of MAP.adjacency[target]) {
+      const n = troopsAt(s, 'warlord', from, 'approach').length;
+      if (n >= 2) list.push({ type: 'stratagem', cardId: 'night_march', lane: from, to: target, count: RULES.stratagems.nightMarchMax });
+    }
+  }
+  if (deckHas(s, 'campfires')) {
+    const decoy = LANES.filter((l) => l !== target).sort((a, b) => troopsAt(s, 'warlord', b, 'approach').length - troopsAt(s, 'warlord', a, 'approach').length)[0];
+    list.push({ type: 'stratagem', cardId: 'campfires', lane: decoy });
+  }
+  // 3. Grow the army and starve the castle.
+  if (warlordTroopCount(s) < supplyRating(s)) list.push(...recruitActions(s, target));
+  for (const l of LANES) {
+    const granary = s.baileys[l].find((b) => b?.buildingId === 'granary' && !s.harassed.includes(b.uid));
+    if (granary) list.push({ type: 'harass', lane: l, buildingUid: granary.uid });
+  }
+  // 4. Bring up the close-quarters engines for the Assault.
+  for (const id of ['battering_ram', 'siege_tower', 'ladders', 'catapult']) {
+    if (deckHas(s, id)) list.push({ type: 'emplace', cardId: id, lane: target, ...(id === 'catapult' ? { target: 'tower' as const } : {}) });
+  }
+  // 5. Visible march toward the target (only from a non-adjacent lane).
+  list.push(...marchActions(s, target));
+  if (s.siegeDecks.warlord.length < 8) list.push({ type: 'draft', actor: 'warlord', deck: 'troops' }, { type: 'draft', actor: 'warlord', deck: 'engines' });
+  return firstLegal(s, list) ?? { type: 'endTurn', actor: 'warlord' };
+}
+
+/** Storm now, or keep squeezing? */
+function warlordAssaultDecision(s: GameState): Action {
+  const target = warlordTargetLane(s);
+  const wall = s.walls[target], gate = s.gates[target];
+  const softened = wall.hp <= wall.maxHp / 2 || gate.hp <= gate.maxHp / 2 || s.breached[target];
+  const towersDown = coveringTowers(s, target) === 0;
+  // Waiting softens the castle but shortens the Assault: storm after at most `ai.maxBlockadeRounds`.
+  const maxWait = (RULES.ai as any).maxBlockadeRounds ?? 2;
+  if (s.hungry || softened || towersDown || s.blockade!.round >= maxWait) return { type: 'orderAssault' };
+  return { type: 'holdSiege' };
 }
 
 function bestAssaultTarget(s: GameState, lane: Lane): StructureKind {

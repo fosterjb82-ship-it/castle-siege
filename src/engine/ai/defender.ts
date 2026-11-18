@@ -4,7 +4,7 @@ import { canUseFallback, cardPlayError, knightAvailable } from '../siege';
 import type { AbilityPlan, Action, CardPlanInput, CharacterId, GameState, Lane } from '../types';
 import { CHARACTERS, LANES } from '../types';
 import {
-  buildingsOf, countBuilding, cornersCovering, defendersIn, garrisonRoom, hasBuilding, incomeFor, mainCampLane, sumStrength, troopsAt,
+  apparentWarlordCount, buildingsOf, countBuilding, cornersCovering, defendersIn, garrisonRoom, hasBuilding, incomeFor, mainCampLane, sumStrength, troopsAt,
 } from '../util';
 import { aiRng, laneThreat, lanesByThreat } from './common';
 
@@ -17,9 +17,9 @@ function productionCount(s: GameState) {
 /** Food still needed to feed the expected garrison for the whole siege. */
 export function foodDeficit(s: GameState): number {
   const expected = Math.max(defendersCount(s), garrisonCapacityOf(s));
-  const need = Math.ceil(expected / RULES.food.troopsPerFood) * RULES.siegeRounds;
+  const need = Math.ceil(expected / RULES.food.troopsPerFood) * (s.relief?.roundsLeft ?? RULES.relief.rounds);
   const income = incomeFor(s, 'defender', true).food ?? 0;
-  const roundsLeft = s.phase === 'siege' ? 0 : s.finalBuildRound ? 0 : Math.max(1, RULES.ai.hornsByRound - s.round + 1);
+  const roundsLeft = s.phase !== 'build' ? 0 : Math.max(1, RULES.ai.hornsByRound - s.round + 1);
   return need - (s.stock.defender.food ?? 0) - income * roundsLeft;
 }
 const defendersCount = (s: GameState) => s.troops.filter((t) => t.side === 'defender').length;
@@ -33,13 +33,13 @@ function scoreBuild(s: GameState, a: Extract<Action, { type: 'build' }>): number
   const early = s.round <= 3 && !s.hornsSounded;
   const prod = productionCount(s);
   switch (id) {
-    case 'quarry': return prod < 5 && !s.finalBuildRound ? (early ? 7 : 3) - countBuilding(s, 'defender', 'quarry') : -1;
-    case 'market': return prod < 5 && !s.finalBuildRound ? (early ? 7.5 : 3) - countBuilding(s, 'defender', 'market') * 1.5 : -1;
+    case 'quarry': return prod < 5 && !(s.phase === 'blockade') ? (early ? 7 : 3) - countBuilding(s, 'defender', 'quarry') : -1;
+    case 'market': return prod < 5 && !(s.phase === 'blockade') ? (early ? 7.5 : 3) - countBuilding(s, 'defender', 'market') * 1.5 : -1;
     case 'granary': {
       const d = foodDeficit(s);
-      return s.finalBuildRound ? -1 : d > 0 ? 6 + Math.min(d, 8) * 0.25 - countBuilding(s, 'defender', 'granary') * 1.5 : 0.5;
+      return (s.phase === 'blockade') ? -1 : d > 0 ? 6 + Math.min(d, 8) * 0.25 - countBuilding(s, 'defender', 'granary') * 1.5 : 0.5;
     }
-    case 'lumber_mill': return prod < 5 && !s.finalBuildRound ? (early ? 6 : 2) - countBuilding(s, 'defender', 'lumber_mill') * 2 : -1;
+    case 'lumber_mill': return prod < 5 && !(s.phase === 'blockade') ? (early ? 6 : 2) - countBuilding(s, 'defender', 'lumber_mill') * 2 : -1;
     case 'barracks': return hasBuilding(s, 'defender', 'barracks') ? -1 : s.round >= 2 || garrisonRoom(s) <= 1 ? 7 : 4;
     case 'garrison_hall': return s.round >= 4 ? 6 : 2;
     case 'weaponsmith': {
@@ -97,7 +97,7 @@ function scoreAction(s: GameState, actor: CharacterId, a: Action, rnd: () => num
       const lanes = lanesByThreat(s);
       const laneBonus = a.lane === lanes[0] ? 1.2 : a.lane === lanes[1] ? 0.6 : 0;
       const thin = defendersIn(s, a.lane).length === 0 ? 1 : 0;
-      const late = s.round >= 4 || s.finalBuildRound ? 1.5 : 0;
+      const late = s.round >= 4 || (s.phase === 'blockade') ? 1.5 : 0;
       // With little room left in the garrison, spend it on quality troops.
       const room = garrisonRoom(s);
       const quality = room <= 3 && a.troop === 'militia' ? -2.5 : 0;
@@ -105,11 +105,11 @@ function scoreAction(s: GameState, actor: CharacterId, a: Action, rnd: () => num
     }
     case 'draft': {
       const base = { tactics: 4.6, fortifications: 5, garrison: 5 }[a.deck] ?? 3;
-      const late = s.round >= 4 || s.finalBuildRound ? 1.5 : 0;
+      const late = s.round >= 4 || (s.phase === 'blockade') ? 1.5 : 0;
       return base + late - Math.max(0, deck - 3) * 0.8 + noise;
     }
     case 'decree': return 6 + (a.resource === 'food' && foodDeficit(s) > 0 ? 1 : 0) + noise;
-    case 'trade': return (a.get === 'food' && s.finalBuildRound && foodDeficit(s) > 0 && a.give !== 'food' ? 3.5 : a.give === 'food' ? -1 : 0.3) + noise;
+    case 'trade': return (a.get === 'food' && (s.phase === 'blockade') && foodDeficit(s) > 0 && a.give !== 'food' ? 3.5 : a.give === 'food' ? -1 : 0.3) + noise;
     case 'requisition': return (a.get === 'food' && foodDeficit(s) > 2 ? 3 : a.give === 'food' ? -1 : 0.5) + noise;
     case 'raid': {
       const foes = troopsAt(s, 'warlord', a.lane, 'approach');
@@ -117,9 +117,33 @@ function scoreAction(s: GameState, actor: CharacterId, a: Action, rnd: () => num
       const mine = RULES.raid.knightStrength + sumStrength(s, party);
       const targets = s.approaches[a.lane].filter((b) => b && !building(b.buildingId).indestructible).length;
       const guards = s.approaches[a.lane].filter(Boolean).length * (RULES.raid.guardPerBuilding ?? 0);
-      return mine > sumStrength(s, foes) + guards && targets ? 6.5 + noise : -5;
+      const seen = s.phase === 'blockade'
+        ? apparentWarlordCount(s, a.lane) * (foes.length ? sumStrength(s, foes) / foes.length : 1.3)
+        : sumStrength(s, foes);
+      if (mine <= seen + guards) return -5;
+      if (a.targetEngineUid !== undefined) return 7.5 + noise; // burn a siege engine
+      return targets ? 6.5 + noise : -5;
     }
     case 'move': return -1;
+    case 'repair': {
+      const t = lanesByThreat(s);
+      const laneW = a.lane === t[0] ? 1.5 : a.lane === t[1] ? 0.7 : 0;
+      let dmg = 0;
+      if (a.structure === 'tower') dmg = Math.max(0, ...cornersCovering(a.lane).map((c) => s.towers[c] ? s.towers[c]!.maxHp - s.towers[c]!.hp : 0));
+      else { const st = a.structure === 'wall' ? s.walls[a.lane] : s.gates[a.lane]; dmg = st.maxHp - st.hp; }
+      return dmg >= 2 ? 4.5 + Math.min(dmg, 4) * 0.5 + laneW + noise : dmg === 1 ? 1.5 + noise : -1;
+    }
+    case 'scout': {
+      if (s.blockade?.scouted.includes(a.lane)) return -1;
+      // Suspicious lanes: where the visible army is, and where the Warlord might be hiding it.
+      const t = lanesByThreat(s);
+      return (a.lane === t[0] ? 4.2 : a.lane === t[1] ? 3.6 : 2.2) + noise;
+    }
+    case 'levy': {
+      const fed = foodDeficit(s) <= 0;
+      const t = lanesByThreat(s);
+      return (fed ? 4.4 : 1.2) + (a.lane === t[0] ? 0.5 : 0) + noise;
+    }
     case 'endTurn': return 0.1;
     default: return 0;
   }

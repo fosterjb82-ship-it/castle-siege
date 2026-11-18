@@ -158,6 +158,18 @@ export function foodUpkeep(s: GameState): number {
   return Math.ceil(s.troops.filter((t) => t.side === 'defender').length / RULES.food.troopsPerFood);
 }
 
+// ---------- What the defenders can see ----------
+
+/**
+ * Warlord troops the defenders believe are in an approach. During the Siege (blockade),
+ * Night March and Campfires make this differ from the truth; otherwise it is the real count.
+ */
+export function apparentWarlordCount(s: GameState, lane: Lane): number {
+  const actual = troopsAt(s, 'warlord', lane, 'approach').length;
+  if (s.phase !== 'blockade' || !s.blockade) return actual;
+  return Math.max(0, actual + (s.blockade.offsets[lane] ?? 0));
+}
+
 // ---------- Troops ----------
 
 export function troopsAt(s: GameState, side: Side, lane: Lane, zone: 'bailey' | 'approach'): Troop[] {
@@ -177,7 +189,7 @@ export function troopStrength(s: GameState, t: Troop): number {
   if (t.side === 'defender') {
     if (hasBuilding(s, 'defender', 'garrison_hall')) str += building('garrison_hall').troopStrengthBonus ?? 1;
     for (const x of buildingsOf(s, 'defender')) if (x.b.buildingId === 'weaponsmith' && x.b.troopType === t.type) str += 1;
-    if (s.siege?.hungry) str -= RULES.food.hungerStrengthPenalty;
+    if (s.hungry) str -= RULES.food.hungerStrengthPenalty;
   } else {
     if (overSupplied(s)) str -= RULES.overSupplyStrengthPenalty;
     const cal = s.siege?.mods.caltrops[t.lane] ?? 0;
@@ -236,7 +248,7 @@ export function incomeFor(s: GameState, side: Side, ignoreHarass = false): Resou
     if (def.produces) addRes(inc, def.produces);
     if (side === 'defender' && def.id === 'market') inc.gold = (inc.gold ?? 0) + 1; // Quartermaster passive
   }
-  if (side === 'defender' && s.phase === 'siege' && !RULES.food.incomeDuringSiege) delete inc.food;
+  if (side === 'defender' && (s.phase === 'siege' || s.phase === 'blockade') && !RULES.food.incomeDuringSiege) delete inc.food;
   if (side === 'warlord' && isWarlordAI(s)) {
     const m = (RULES.ai.difficultyIncome as any)[s.config.difficulty] ?? 1;
     for (const k of Object.keys(inc)) inc[k] = Math.round(inc[k] * m);

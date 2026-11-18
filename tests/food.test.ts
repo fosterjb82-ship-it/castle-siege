@@ -35,14 +35,14 @@ describe('food', () => {
     g = finishRound(planHold(g));
     // Round 2 begins: no income, 1 eaten.
     expect(g.stock.defender.food).toBe(4);
-    expect(g.siege!.hungry).toBe(false);
+    expect(g.hungry).toBe(false);
   });
 
   it('running out of Food makes the garrison hungry: −1 Strength to every defender troop', () => {
     let s = toSiege(afterSetup());
     s.stock.defender.food = 0;
     s = finishRound(planHold(s));
-    expect(s.siege!.hungry).toBe(true);
+    expect(s.hungry).toBe(true);
     const m = s.troops.find((t) => t.side === 'defender')!;
     expect(util.troopStrength(s, m)).toBe(Math.max(0, 1 - RULES.food.hungerStrengthPenalty));
     expect(s.log.some((l) => l.text.includes('HUNGER'))).toBe(true);

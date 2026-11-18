@@ -105,7 +105,6 @@
     "earliestRound": 4,
     "latestRound": 8
   },
-  "siegeRounds": 5,
   "handSize": {
     "defenderPerCharacter": 3,
     "warlord": 5
@@ -144,7 +143,8 @@
     },
     "hornsStrengthMargin": 6,
     "economyRounds": 3,
-    "hornsByRound": 6
+    "hornsByRound": 6,
+    "maxBlockadeRounds": 2
   },
   "minimumCostAfterDiscount": 1,
   "recruitPerAction": 3,
@@ -160,5 +160,27 @@
     "troopsPerFood": 3,
     "hungerStrengthPenalty": 1,
     "incomeDuringSiege": false
+  },
+  "relief": {
+    "rounds": 7,
+    "forceAssaultAt": 3
+  },
+  "blockade": {
+    "defenderActions": 1,
+    "warlordActionsPerDefenderTurn": 1
+  },
+  "repair": {
+    "cost": {
+      "stone": 1
+    },
+    "amount": 2,
+    "architectBonus": 1
+  },
+  "levy": {
+    "count": 2
+  },
+  "stratagems": {
+    "nightMarchMax": 5,
+    "campfiresPhantom": 4
   }
 }

@@ -4,7 +4,8 @@ import type { Action, GameState, SlotRef } from '../engine';
 import { Board } from './Board';
 import { ChooseCharacterPanel, DraftPanel, HornsPanel, TurnPanel } from './BuildPanel';
 import { Menu } from './Menu';
-import { DebugPanel, DeckPeek, EndScreen, HornsBanner, LogPanel, PrivacyScreen, StockPanels } from './Panels';
+import { AssaultBanner, DebugPanel, DeckPeek, EndScreen, HornsBanner, LogPanel, PrivacyScreen, StockPanels } from './Panels';
+import { AssaultDecisionPanel } from './SiegeActions';
 import { SetupPanel, SiegePlanPanel, SiegeResolvePanel } from './SiegePanel';
 import { Viewer, activeAIActor, activeHumanActor, actorName, download, logText, playerOf } from './uiutil';
 
@@ -47,10 +48,12 @@ export function App() {
   const [auto, setAuto] = useState(false);
   const [confirmed, setConfirmed] = useState<string | null>(null);
   const [horns, setHorns] = useState(false);
+  const [assault, setAssault] = useState(false);
   const [saved, setSaved] = useState(!!loadSave());
 
   const commit = useCallback((next: GameState, prev: GameState | null) => {
     if (prev && !prev.hornsSounded && next.hornsSounded) setHorns(true);
+    if (prev && prev.phase === 'blockade' && next.phase === 'siege') { setHorns(false); setAssault(true); }
     ref.current = next;
     setGame(next);
     if (prev) setHistory((h) => [...h.slice(-199), prev]);
@@ -115,6 +118,7 @@ export function App() {
   else if (s.step === 'chooseCharacter') panel = human ? <ChooseCharacterPanel {...props} /> : <Waiting />;
   else if (s.step === 'draftPick') panel = human ? <DraftPanel {...props} /> : <Waiting />;
   else if (s.step === 'hornsDecision') panel = human ? <HornsPanel {...props} /> : <Waiting text="The Warlord considers the War Horns…" />;
+  else if (s.step === 'assaultDecision') panel = human ? <AssaultDecisionPanel s={s} dispatch={dispatch} /> : <Waiting text="The Warlord weighs storming the walls…" />;
   else if (s.step === 'defenderTurn' || s.step === 'warlordTurn') {
     panel = human ? <>{<TurnPanel key={`${s.round}-${human}`} {...props} />}<DeckPeek s={s} actor={human} /></> : <Waiting text={`${actorName(s.step === 'warlordTurn' ? 'warlord' : s.turn.current!)} is acting…`} />;
   } else if (s.step === 'siege') {
@@ -123,8 +127,9 @@ export function App() {
   }
 
   const phaseText = s.phase === 'setup' ? 'Setup'
-    : s.phase === 'build' ? `Build round ${s.round}${s.finalBuildRound ? ' (final)' : ''} · ${s.step === 'warlordTurn' ? 'Warlord responds' : s.turn.current ? `${actorName(s.turn.current)}'s turn` : ''}`
-    : s.phase === 'siege' ? `Siege round ${s.siegeRound} · ${s.siege!.stage === 'plan' ? 'planning' : 'resolving'}`
+    : s.phase === 'build' ? `Build round ${s.round} · ${s.step === 'warlordTurn' ? 'Warlord responds' : s.turn.current ? `${actorName(s.turn.current)}'s turn` : ''}`
+    : s.phase === 'blockade' ? `Siege round ${s.blockade!.round} (blockade) · relief in ${s.relief!.roundsLeft} · ${s.step === 'warlordTurn' ? 'Warlord responds' : s.turn.current ? `${actorName(s.turn.current)}'s turn` : ''}`
+    : s.phase === 'siege' ? `Assault round ${s.siegeRound} · relief in ${s.relief?.roundsLeft ?? '—'} · ${s.siege!.stage === 'plan' ? 'planning' : 'resolving'}`
     : 'Game over';
 
   return (
@@ -161,6 +166,7 @@ export function App() {
       </div>
       {needPrivacy && pk && <PrivacyScreen who={pk.who} player={pk.key} onReady={() => setConfirmed(pk.key)} />}
       {horns && !needPrivacy && <HornsBanner onClose={() => setHorns(false)} />}
+      {assault && !needPrivacy && <AssaultBanner s={s} onClose={() => setAssault(false)} />}
       {s.winner && <EndScreen s={s} viewer={viewer} onMenu={() => setGame(null)} />}
     </div>
   );

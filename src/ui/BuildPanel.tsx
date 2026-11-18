@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import {
-  BUILDINGS, CHARACTER_DEFS, MAP, RULES, TROOPS, buildCost, draftAvailable, draftInfo, legalBuildsForSlot, recruitCost,
+  BUILDINGS, CHARACTER_DEFS, MAP, RULES, TROOPS, buildCost, card, draftAvailable, draftInfo, legalBuildsForSlot, recruitCost,
   slotContents, slotLabel, trainCost, tryAction, util,
 } from '../engine';
 import type { Action, Actor, CharacterId, GameState, Lane, SlotRef } from '../engine';
 import { LANES } from '../engine';
 import { CardView } from './CardView';
+import { SiegeActions } from './SiegeActions';
 import { actorName, playerOf, resText } from './uiutil';
 
 const RES_D = ['stone', 'wood', 'gold', 'food'];
@@ -38,8 +39,8 @@ export function ChooseCharacterPanel({ s, dispatch }: PanelProps) {
   const left = (['lord', 'architect', 'quartermaster', 'knight'] as CharacterId[]).filter((c) => !s.turn.done.includes(c));
   return (
     <div className="col">
-      <h2>Build round {s.round}{s.finalBuildRound ? ' — final round' : ''}</h2>
-      <p className="muted">The team chooses who acts next. Each character takes {RULES.defenderActionsPerTurn} actions{s.finalBuildRound ? '' : '; the Warlord then takes 1 action'}.</p>
+      <h2>{s.phase === 'blockade' ? `Siege round ${s.blockade!.round} · relief in ${s.relief!.roundsLeft}` : `Build round ${s.round}`}</h2>
+      <p className="muted">The team chooses who acts next. Each character takes {s.phase === 'blockade' ? RULES.blockade.defenderActions : RULES.defenderActionsPerTurn} action(s); the Warlord then takes 1 action.</p>
       {left.map((c) => (
         <button key={c} onClick={() => dispatch({ type: 'chooseCharacter', character: c })} style={{ textAlign: 'left' }}>
           <b>{CHARACTER_DEFS[c].name}</b> <span className="muted">({playerOf(s, c)})</span>
@@ -140,6 +141,7 @@ export function TurnPanel({ s, dispatch, selected, setSelected }: PanelProps) {
   const [amount, setAmount] = useState(3);
   const [res, setRes] = useState('gold');
   const [msg, setMsg] = useState<string | null>(null);
+  const [raidEngine, setRaidEngine] = useState('');
   const run = (a: Action) => setMsg(dispatch(a));
   const resList = isW ? RES_W : RES_D;
   const adj = MAP.adjacency[lane];
@@ -156,7 +158,7 @@ export function TurnPanel({ s, dispatch, selected, setSelected }: PanelProps) {
     <div className="col">
       <h2>{actorName(actor)} <span className="muted" style={{ fontWeight: 400 }}>({playerOf(s, actor)})</span></h2>
       <div className="muted">
-        {isW ? `${s.turn.warlordActionsLeft} action left` : `${s.turn.actionsLeft} action(s) left`} · Round {s.round}
+        {isW ? `${s.turn.warlordActionsLeft} action left` : `${s.turn.actionsLeft} action(s) left`} · {s.phase === 'blockade' ? `Siege round ${s.blockade!.round} · relief in ${s.relief!.roundsLeft}` : `Round ${s.round}`}
       </div>
       {def && <div style={{ fontSize: 12 }}><b>Ability:</b> {def.abilityText}<br /><b>Passive:</b> {def.passiveText}</div>}
       {isW && <div style={{ fontSize: 12 }}>Supply Rating {util.supplyRating(s)} · Troops {util.warlordTroopCount(s)}{util.overSupplied(s) ? ' — OVER SUPPLY: all troops −1 Strength' : ''}</div>}
@@ -243,13 +245,20 @@ export function TurnPanel({ s, dispatch, selected, setSelected }: PanelProps) {
       )}
       {actor === 'knight' && (
         <div className="section">
-          <h3>Raid {used && <span className="muted">(used)</span>}</h3>
+          <h3>{s.phase === 'blockade' ? 'Sortie' : 'Raid'} {used && <span className="muted">(used)</span>}</h3>
           <div className="row">
             through the <LaneSelect value={lane} onChange={setLane} /> gate with
             <select value={Math.min(count, RULES.raid.maxTroops)} onChange={(e) => setCount(Number(e.target.value))}>
               {Array.from({ length: RULES.raid.maxTroops + 1 }, (_, i) => i).map((n) => <option key={n} value={n}>{n} troop(s)</option>)}
             </select>
-            <button disabled={used} onClick={() => run({ type: 'raid', actor: 'knight', lane, troopUids: util.defendersIn(s, lane).slice(0, Math.min(count, RULES.raid.maxTroops)).map((t) => t.uid) })}>Raid</button>
+            {s.engines.some((e) => e.lane === lane) && (
+              <select value={raidEngine} onChange={(e) => setRaidEngine(e.target.value)}>
+                <option value="">burn a camp building</option>
+                {s.engines.filter((e) => e.lane === lane).map((e) => <option key={e.uid} value={String(e.uid)}>burn the {card(e.cardId).name}</option>)}
+              </select>
+            )}
+            <button disabled={used} onClick={() => run({ type: 'raid', actor: 'knight', lane, troopUids: util.defendersIn(s, lane).slice(0, Math.min(count, RULES.raid.maxTroops)).map((t) => t.uid),
+              ...(raidEngine && s.engines.some((e) => String(e.uid) === raidEngine && e.lane === lane) ? { targetEngineUid: Number(raidEngine) } : {}) })}>{s.phase === 'blockade' ? 'Sortie' : 'Raid'}</button>
           </div>
           <RaidOdds s={s} lane={lane} n={Math.min(count, RULES.raid.maxTroops)} />
         </div>
@@ -262,6 +271,8 @@ export function TurnPanel({ s, dispatch, selected, setSelected }: PanelProps) {
         </div>
       )}
 
+      <SiegeActions s={s} actor={actor} run={run} />
+
       <div className="err">{msg}</div>
       <button className="primary" onClick={() => run({ type: 'endTurn', actor })}>End turn</button>
     </div>
@@ -273,8 +284,12 @@ function RaidOdds({ s, lane, n }: { s: GameState; lane: Lane; n: number }) {
     const party = util.defendersIn(s, lane).slice(0, n);
     const mine = RULES.raid.knightStrength + util.sumStrength(s, party);
     const guards = s.approaches[lane].filter(Boolean).length * (RULES.raid.guardPerBuilding ?? 0);
-    const theirs = util.sumStrength(s, util.troopsAt(s, 'warlord', lane, 'approach')) + guards;
-    return { mine, theirs };
+    const real = util.troopsAt(s, 'warlord', lane, 'approach');
+    // Under blockade the defenders only know what they can see (stratagems may fool them).
+    const seen = s.phase === 'blockade'
+      ? Math.round(util.apparentWarlordCount(s, lane) * (real.length ? util.sumStrength(s, real) / real.length : 1))
+      : util.sumStrength(s, real);
+    return { mine, theirs: seen + guards, estimate: s.phase === 'blockade' };
   }, [s, lane, n]);
-  return <div className="muted" style={{ fontSize: 12 }}>Raid Strength {odds.mine} vs {odds.theirs} (troops + camp guards). Win needs higher.</div>;
+  return <div className="muted" style={{ fontSize: 12 }}>Strength {odds.mine} vs {odds.estimate ? '~' : ''}{odds.theirs} (troops + camp guards{odds.estimate ? ', as far as you can tell' : ''}). Win needs higher.</div>;
 }

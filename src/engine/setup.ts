@@ -73,6 +73,9 @@ export function createGame(opts: NewGameOptions = {}): GameState {
     hands: empty(),
     intel: [],
     population: RULES.garrison.startingPopulation,
+    hungry: false,
+    relief: null,
+    blockade: null,
     turn: { done: [], current: null, actionsLeft: 0, warlordActionsLeft: 0, abilityUsed: {}, returnStep: null },
     pendingDraft: null,
     harassed: [],
@@ -81,7 +84,7 @@ export function createGame(opts: NewGameOptions = {}): GameState {
     winner: null,
     winReason: '',
     nextUid: 1,
-    stats: { firstBreach: null, breaches: [], cardsPlayed: {}, drafted: {}, hornsRound: null, raids: { won: 0, lost: 0 } },
+    stats: { firstBreach: null, breaches: [], cardsPlayed: {}, drafted: {}, hornsRound: null, blockadeRounds: 0, hungryRounds: 0, stratagems: 0, assaultForced: false, raids: { won: 0, lost: 0 } },
   };
 
   // Draft decks from card copies.

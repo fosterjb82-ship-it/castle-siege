@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { CHARACTER_DEFS, card, util } from '../engine';
+import { CHARACTER_DEFS, RULES, card, util } from '../engine';
 import type { Action, Actor, GameState, Resources, Side } from '../engine';
 import { CardView } from './CardView';
 import { RES_ICON, Viewer, canSee, download, logText } from './uiutil';
@@ -23,11 +23,19 @@ export function StockPanels({ s, viewer }: { s: GameState; viewer: Viewer }) {
   return (
     <>
       <div className="panel">
+        {s.relief && (
+          <div className="relief" title={`Defenders win if the Keep stands when the relief army arrives. The Assault is forced when ${RULES.relief.forceAssaultAt} rounds remain.`}>
+            🐎 Relief army: <b>{s.relief.roundsLeft}</b> round{s.relief.roundsLeft === 1 ? '' : 's'} away
+            <div className="clock">{Array.from({ length: RULES.relief.rounds }, (_, i) => (
+              <span key={i} className={`tick ${i < RULES.relief.rounds - s.relief!.roundsLeft ? 'gone' : ''} ${RULES.relief.rounds - i === RULES.relief.forceAssaultAt ? 'force' : ''}`} />
+            ))}</div>
+          </div>
+        )}
         <h3 className="def">Defenders' stockpile</h3>
         <ResTable stock={s.stock.defender} income={util.incomeFor(s, 'defender')} />
         <div className="section kv" style={{ fontSize: 12 }}>
           <span>Garrison</span><span>{util.defenderTroopCount(s)} / {util.garrisonCapacity(s)} troops (Str {util.totalDefenderStrength(s)})</span>
-          <span>Food upkeep</span><span title="Eaten at the start of each siege round: 1 Food per 3 troops. No Food comes in during the siege.">{util.foodUpkeep(s)}/siege round{s.siege?.hungry ? ' — HUNGRY (−1 Str)' : ''}</span>
+          <span>Food upkeep</span><span title="Eaten at the start of each Siege and Assault round: 1 Food per 3 troops. No Food comes in after the War Horns.">{util.foodUpkeep(s)}/round{util.foodUpkeep(s) ? ` · ${Math.floor((s.stock.defender.food ?? 0) / util.foodUpkeep(s))} rounds of food` : ''}{s.hungry ? ' — HUNGRY (−1 Str)' : ''}</span>
           <span>Population</span><span title="Townsfolk who can be levied as Militia beyond the cap (Militia Levy)">{s.population ?? 0} townsfolk</span>
           <span>Knight</span><span>{s.knight.downUntilSiegeRound !== null ? 'recovering' : `HP ${s.knight.hp} · ${s.knight.lane ? `${s.knight.lane} bailey` : 'Keep'}`}</span>
         </div>
@@ -110,6 +118,7 @@ export function DebugPanel({ s, dispatch, reveal, setReveal, undo, canUndo, load
         </div>
         <div className="row">
           <button className="small" onClick={() => setMsg(dispatch({ type: 'debugSkipToHorns' }))}>Jump to War Horns</button>
+          <button className="small" onClick={() => setMsg(dispatch({ type: 'debugSkipToAssault' }))}>Jump to Assault</button>
           <button className="small" disabled={!canUndo} onClick={undo}>Undo</button>
           <button className="small" onClick={aiStep}>AI takes this move</button>
         </div>
@@ -174,12 +183,27 @@ export function PrivacyScreen({ who, player, onReady }: { who: string; player: s
   );
 }
 
+export function AssaultBanner({ s, onClose }: { s: GameState; onClose: () => void }) {
+  const reveal = [...s.log].reverse().find((l) => l.text.startsWith('Dawn reveals'));
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{ textAlign: 'center' }}>
+        <div className="banner">⚔ THE ASSAULT ⚔</div>
+        <p>{reveal?.text ?? 'The Warlord storms the walls!'}</p>
+        <p>Hold for <b>{s.relief?.roundsLeft ?? '?'}</b> rounds until the relief army arrives.</p>
+        <button className="primary" onClick={onClose}>Man the walls!</button>
+      </div>
+    </div>
+  );
+}
+
 export function HornsBanner({ onClose }: { onClose: () => void }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" style={{ textAlign: 'center' }}>
         <div className="banner">📯 WAR HORNS 📯</div>
-        <p>The Warlord has sounded the attack. Defenders get <b>one final build round</b>, then the siege begins.</p>
+        <p>The Warlord surrounds the castle. <b>The fields are cut off: no more Food will come in.</b></p>
+        <p>A relief army is on its way, <b>{RULES.relief.rounds} rounds</b> away. Hold the Keep until it arrives. The Warlord must storm the walls before then.</p>
         <button className="primary" onClick={onClose}>To the walls!</button>
       </div>
     </div>

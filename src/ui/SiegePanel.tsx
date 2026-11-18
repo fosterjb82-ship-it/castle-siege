@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  CHARACTER_DEFS, MAP, RESOLVE_STEPS, RULES, canUseFallback, card, cardPlayError, cardsRequired, fallbackCard,
+  CHARACTER_DEFS, MAP, RESOLVE_STEPS, canUseFallback, card, cardPlayError, cardsRequired, fallbackCard,
   knightAvailable, util,
 } from '../engine';
 import type { AbilityPlan, Action, Actor, CardPlanInput, CharacterId, GameState, Lane } from '../engine';
@@ -81,7 +81,7 @@ export function SiegePlanPanel({ s, actor, dispatch }: { s: GameState; actor: Ac
 
   return (
     <div className="col">
-      <h2>Siege round {s.siegeRound}/{RULES.siegeRounds}: {actorName(actor)} plans</h2>
+      <h2>Assault round {s.siegeRound} · relief in {s.relief?.roundsLeft ?? '—'}: {actorName(actor)} plans</h2>
       <div className="muted">{playerOf(s, actor)} · play {need} card{need > 1 ? 's' : ''} face down onto lanes.</div>
       {!isW && <div style={{ fontSize: 12 }}><b>Siege ability:</b> {CHARACTER_DEFS[actor as CharacterId].siegeText}</div>}
       <h4>Hand ({hand.length}) · deck {s.siegeDecks[actor].length}</h4>

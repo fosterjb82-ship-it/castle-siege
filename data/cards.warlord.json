@@ -191,6 +191,40 @@
     "text": "Engines ignore this lane's moat this round."
   },
   {
+    "id": "night_march",
+    "name": "Night March",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "stratagem",
+        "kind": "nightMarch"
+      }
+    ],
+    "copies": 2,
+    "text": "Siege stratagem: as an action, secretly move up to 5 troops to an adjacent approach. The defenders still see them where they were. No effect in the Assault."
+  },
+  {
+    "id": "campfires",
+    "name": "Campfires",
+    "side": "warlord",
+    "deck": "tactics",
+    "speed": "scout",
+    "laneRule": "any",
+    "target": "none",
+    "effects": [
+      {
+        "type": "stratagem",
+        "kind": "campfires"
+      }
+    ],
+    "copies": 2,
+    "text": "Siege stratagem: as an action, light false campfires. One approach looks like it holds 4 more troops than it does. No effect in the Assault."
+  },
+  {
     "id": "footmen_wave",
     "name": "Footmen Wave",
     "side": "warlord",

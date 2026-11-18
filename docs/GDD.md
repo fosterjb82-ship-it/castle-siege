@@ -2,7 +2,7 @@
 
 > **Working title:** Castle Siege (final name TBD)
 > **Status:** v0.2. It adds the three-phase structure (Build → Siege → Assault) with a relief-army clock, plus food, the garrison cap and new siege engines. Everything marked *[tunable]* is a starting value to change during playtesting.
-> **Build status:** the beta in this repository implements v0.1 (Build → Siege, where the siege is what v0.2 calls the Assault), plus food, the garrison cap and the engines. **The Siege (blockade) phase and the relief clock (Sections 6, 9, 10) are not built yet.** They are milestone M7.
+> **Build status:** the beta implements v0.2 including milestone M7: the three phases, the relief clock, food, the garrison cap, the new engines and the stratagem cards. Open numbers are in Section 20.
 > **Purpose:** this document is the handoff to a Claude Code build session. It holds the full rules, data and scope needed to build a testable beta.
 > **Source of truth for brainstorm history:** "Castle Siege Game — Design Doc (Working Draft)" (claude.ai Docs). This spec supersedes it where they differ.
 
@@ -241,21 +241,32 @@ Build ──War Horns──▶ Siege (blockade) ──Assault ordered──▶ A
 5. **End of round:** the relief clock moves 1 step. The Warlord may order the Assault.
 
 ### Defender actions in the Siege [Proposed: reuse the Build actions, 1 per character]
-- All Build Phase actions remain: Build/Upgrade, Draft, Train (within the garrison cap), Move, Trade, character abilities. **Decree can't produce Food** during the Siege or the Assault.
-- **Sortie** (Knight only; replaces Raid): as a raid, but it may target an emplaced engine instead of a building.
+- All Build Phase actions remain: Build/Upgrade, Draft, Train (within the garrison cap), Move, Trade, character abilities. **No action can produce Food after the War Horns** (Decree, Trade and Requisition included): the fields are cut off.
+- **Repair:** pay 1 Stone *[tunable]* to restore 2 HP to a wall, gate or tower (the Architect restores 3). Rubble (0 HP) can't be repaired. Repair is also available during the Build Phase.
+- **Sortie** (Knight only; this is the Raid): it may target an emplaced engine instead of a building. A sortie also reveals the true troop count in that approach.
 - **Scout:** look at the Warlord troops in one approach (see Hidden staging).
 - **Levy:** turn 2 townsfolk into Militia beyond the garrison cap (as the Militia Levy card).
 - The interesting trade-offs: repair or fortify? Scout or sortie? Levy more Militia, at the cost of more mouths to feed?
 
 ### Warlord actions in the Siege [Proposed]
 - All Build Phase actions remain (Build, Draft, Recruit, Trade, Harass).
-- **March is hidden** (see below), and Raiders still march free.
+- **March is visible.** Secret movement needs a stratagem card (see below). Raiders still march free.
+- **Play a stratagem** from your siege deck (Night March, Campfires; see below).
 - **Emplace engine:** put an engine card from your siege deck onto an approach, face up. Catapults and Trebuchets start bombarding next round. Rams, Ladders and Siege Towers are ready on the first Assault round. Emplaced engines can be targeted by Sorties and by Burning Oil in the Assault.
 
-### Hidden staging [Proposed: secret repositioning during the Siege]
-- From the War Horns on, **the number of Warlord troops in each approach is hidden** from the defenders. They still see camps, engines and the Warlord's total army size and Supply Rating. On the table this is troop tokens behind a screen; in the digital version the counts are hidden.
-- The Scout action (and Scout Report / Spy cards in the Assault) reveals one approach's current count to the defenders.
-- **All troop positions are revealed when the Assault begins.** This is what makes the Assault a guessing game: the defenders must commit before they know where the main blow lands.
+### Deception: stratagem cards [Decided: secret movement, but only through tactics cards]
+Troop positions are **visible by default**. Generals of old lit campfires in one place and moved their army by night; in this game the Warlord can do the same, but only with **stratagem cards**. These are drafted from the Warlord's Tactics deck during the Build Phase and played as an action during the Siege phase.
+
+| Card | Effect | Copies |
+|---|---|---|
+| **Night March** | Secretly move up to 5 troops *[tunable]* to an adjacent approach. The defenders still see them where they were. | 2 |
+| **Campfires** | One approach looks like it holds 4 more troops *[tunable]* than it does. | 2 |
+
+- **What defenders see:** a campfire count per approach, not unit types, which stratagems can falsify. Engines and camps are always visible.
+- **How the truth comes out:** **Scout** reveals one approach's true count. A **Sortie** reveals the approach it hits. **The Assault reveals every position.**
+- Defenders learn only that "something stirs in the Warlord's camp", never what.
+- **Cost:** drafting stratagems uses picks the Warlord could spend on engines or troops. An unused stratagem is a dead card in the Assault.
+- On the table: the Warlord tracks the real positions behind a screen, with the board showing the campfires.
 
 ### Rejected for now (to keep the game simple)
 - **Starvation win** (the castle surrenders): rejected. It would make waiting dominant.
@@ -428,6 +439,8 @@ Board troops are the standing army trained during the Build Phase. Troop cards i
 | Sappers | engine | 2 damage to this lane's wall, ignoring Defense | 2 |
 | Bribe the Guard | melee | This lane's gate −2 Defense this round | 2 |
 | Bridge | scout | Engines ignore this lane's moat this round **[Decided concept]** | 2 |
+| Night March | (Siege) | Stratagem: secretly move up to 5 troops to an adjacent approach (Section 9) **[Decided concept]** | 2 |
+| Campfires | (Siege) | Stratagem: one approach looks like it holds 4 more troops (Section 9) **[Decided concept]** | 2 |
 
 ### Warlord — Troops deck
 | Card | Speed | Effect | Copies |
@@ -460,8 +473,8 @@ Simple, rule-based, seeded. It should be beatable but threatening.
 - **Build rounds 1–3:** prioritize economy (Supply Line, Foraging Camp), then War Camp and Siege Workshop. Recruit to keep troops ≤ Supply Rating.
 - **Build rounds 4+:** draft heavily (engines and directional assaults for the target lane). Choose the **target lane** = the lane with the lowest (structure Defense + troops + towers), with the main camp's lane as a tiebreaker.
 - **War Horns:** sound when army Strength ≥ (total defender Strength + 6) *[tunable]*, or by round 6 (the beta's tuned value), or at round 8.
-- **Siege (blockade):** emplace Catapults where towers cover the target lane, then Trebuchets; secretly mass troops in the target lane with one feint group elsewhere; harass Granaries.
-- **When to order the Assault [Proposed]:** when the defenders are hungry, or the target lane's towers are down / its wall or gate is below half HP, or the clock forces it.
+- **Siege (blockade):** emplace Catapults where towers cover the target lane, then a Trebuchet. Night March the army into the target lane and light Campfires on a decoy lane. Recruit, harass Granaries, and bring up Rams and Siege Towers.
+- **When to order the Assault [Proposed]:** when the defenders are hungry, the target lane's towers are down, or its wall or gate is below half HP. In any case after at most 2 Siege rounds (`ai.maxBlockadeRounds`), since waiting shortens the Assault.
 - **Siege plays:** 2 cards on the target lane, 1 feint (Decoy or a weak card) on another lane. Switch target if a different lane gets breached.
 - **Difficulty:** Easy / Normal / Hard scale the Warlord's income (×0.75 / ×1 / ×1.25) *[tunable]*.
 
@@ -548,7 +561,7 @@ Effects should use a small set of typed effect handlers (`attackBonus`, `defense
 | M4 | AI Warlord + co-op loop | A full co-op game can be played start to finish vs AI |
 | M5 | Hot-seat Warlord mode | Privacy screens; a full human-vs-human game works |
 | M6 | Playtest tools | Debug panel, save/load, log export, headless AI-vs-AI simulation with summary stats |
-| M7 | Three phases (v0.2) | Siege (blockade) phase, relief clock, hidden staging, Scout/Sortie/Levy/Emplace actions, Assault phase on the clock; AI Warlord decides when to assault; sim reports blockade length and hunger |
+| M7 ✅ | Three phases (v0.2) | Siege (blockade) phase, relief clock, stratagem cards (Night March, Campfires), Repair/Scout/Sortie/Levy/Emplace actions, Assault phase on the clock; AI Warlord decides when to assault; sim reports blockade length, hunger and stratagems |
 
 **Beta definition:** M1–M6 complete, and a full co-op game takes about 45–75 minutes *[tunable target]*.
 

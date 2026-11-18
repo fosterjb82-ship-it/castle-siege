@@ -262,7 +262,7 @@ describe('resolution steps', () => {
 
   it('defenders win after the final siege round', () => {
     let s = siege();
-    for (let r = 0; r < RULES.siegeRounds && !s.winner; r++) {
+    for (let r = 0; r < RULES.relief.rounds + 1 && !s.winner; r++) {
       const fresh = (a: 'lord' | 'architect' | 'quartermaster' | 'knight') => s.hands[a][0] ?? 'hold_the_line';
       for (const c of ['lord', 'architect', 'quartermaster', 'knight'] as const)
         s = applyAction(s, { type: 'planSiege', actor: c, cards: [{ cardId: fresh(c), lane: 'N', fallback: !s.hands[c].length }] });
@@ -270,6 +270,7 @@ describe('resolution steps', () => {
       s = resolveRound(s);
     }
     expect(s.winner).toBe('defender');
+    expect(s.winReason).toMatch(/relief army/);
   });
 
   it('defenders win at once if the Warlord has no troops and no troop cards', () => {

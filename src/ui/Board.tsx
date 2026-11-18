@@ -1,5 +1,5 @@
 
-import { BUILDINGS, MAP, TROOPS, card } from '../engine';
+import { BUILDINGS, MAP, TROOPS, card, util } from '../engine';
 import type { Corner, GameState, Lane, SlotRef, Structure, Troop } from '../engine';
 import { SPEED_ICON, Viewer, actorName } from './uiutil';
 
@@ -93,6 +93,19 @@ function TroopTokens({ s, troops, x, y, w, side, knight }: { s: GameState; troop
   );
 }
 
+/** During the Siege phase defenders only see campfires: a count that stratagems may falsify. */
+function ApparentArmy({ n, x, y }: { n: number; x: number; y: number }) {
+  if (!n) return null;
+  return (
+    <g>
+      <title>{`About ${n} Warlord troops, judging by the campfires. Scout to be sure.`}</title>
+      <circle cx={x} cy={y} r={17} fill="#7a3a20" stroke="#e0a060" strokeWidth={2} strokeDasharray="3 2" />
+      <text x={x} y={y + 5} textAnchor="middle" style={{ fontSize: 13, fontWeight: 800, fill: '#fff' }}>~{n}</text>
+      <text x={x + 24} y={y + 5} style={{ fontSize: 15 }}>🔥</text>
+    </g>
+  );
+}
+
 function WallSeg({ lane, st, gate, onWall, onGate, selWall, selGate, breached, moat }: {
   lane: Lane; st: Structure; gate: Structure; onWall: () => void; onGate: () => void; selWall: boolean; selGate: boolean; breached: boolean; moat: boolean;
 }) {
@@ -171,7 +184,9 @@ export function Board({ s, viewer, selected, onSlot, highlightLanes = [] }: Boar
                 : { x: r.x + 8, y: r.y + 30 + i * (slotH + 8), w: slotH === 46 ? 124 : slotW, h: slotH };
               return <SlotBox key={i} r={sr} label={b ? BUILDINGS[b.buildingId].name : null} side="war" sel={sameSlot(selected, slot)} onClick={() => onSlot(slot)} />;
             })}
-            <TroopTokens s={s} troops={troops} side="war" x={h ? r.x + 6 : r.x + 4} y={h ? r.y + 56 : r.y + 200} w={h ? 400 : 132} />
+            {s.phase === 'blockade' && viewer !== 'all' && viewer !== 'warlord'
+              ? <ApparentArmy n={util.apparentWarlordCount(s, l)} x={h ? r.x + 26 : r.x + 24} y={h ? r.y + 74 : r.y + 218} />
+              : <TroopTokens s={s} troops={troops} side="war" x={h ? r.x + 6 : r.x + 4} y={h ? r.y + 56 : r.y + 200} w={h ? 400 : 132} />}
             {engines.map((e, i) => {
               const ex = h ? r.x + 440 + i * 56 : r.x + 10 + (i % 2) * 64;
               const ey = h ? r.y + 62 : r.y + 340 + Math.floor(i / 2) * 50;

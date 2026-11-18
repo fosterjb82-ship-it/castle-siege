@@ -37,12 +37,30 @@ The spec (`docs/GDD.md`, v0.1) leaves some details open. This file lists every p
 ## Food (added after the beta build)
 - **[Beta change] Food is a fourth defender resource.** It starts at 4. The Keep produces +1 per Collect and a **Granary** (bailey building, 2 Wood) +2. Food can be traded, Decreed and Requisitioned like the other resources.
 - **The siege cuts off the fields.** No Food is collected during the Siege Phase (`rules.food.incomeDuringSiege: false`). The castle lives on what it stored.
-- **Upkeep:** at the start of each siege round the garrison eats 1 Food per `rules.food.troopsPerFood` (3) defender troops, rounded up. The Knight eats at the lords' table and doesn't count.
+- **Upkeep:** at the start of each Siege and Assault round the garrison eats 1 Food per `rules.food.troopsPerFood` (3) defender troops, rounded up. The Knight eats at the lords' table and doesn't count.
 - **Hunger:** if the stores can't cover the upkeep, the remaining Food is eaten and the garrison is hungry for that round. Every defender troop has −`rules.food.hungerStrengthPenalty` (1) Strength, minimum 0. This mirrors the Warlord's over-supply penalty.
 - Interactions: more troops (including levied Militia) mean more mouths. The Warlord's existing Harass can stop a Granary producing (the AI Warlord prefers to harass Granaries).
 
 ## War Horns (§9)
 - The AI also sounds the horns by round `rules.ai.hornsByRound` (6). The spec's trigger (army Strength ≥ defender Strength + 6) almost never fires, because defenders out-build the Warlord.
+
+## Siege (blockade) phase and relief clock (GDD v0.2 §9, milestone M7)
+- **Internal IDs:** the code calls the Siege phase `phase: 'blockade'` and keeps `phase: 'siege'` for the **Assault** (the v0.1 name). `siegeRound` counts Assault rounds; `blockade.round` counts Siege rounds.
+- **The clock:** the War Horns set `relief.roundsLeft = rules.relief.rounds` (7). It ticks at the end of every Siege and Assault round. At the end of a Siege round, if `roundsLeft ≤ rules.relief.forceAssaultAt` (3) the Assault starts automatically; otherwise the Warlord orders it or holds. When it reaches 0 at the end of an Assault round with the Keep standing, the defenders win.
+- **A Siege round:** Collect (no Food for the defenders) → the garrison eats → emplaced Catapults and Trebuchets bombard → character turns, 1 action each (`rules.blockade.defenderActions`), with 1 Warlord action after each.
+- **No action can produce Food after the War Horns.** Decree, Trade and Requisition all refuse Food, so trading would otherwise bypass the food pressure.
+- **Repair** (new action, Build and Siege phases): 1 Stone for +2 HP to a wall, gate or tower covering a lane; the Architect gets +1. It can't repair rubble.
+- **Scout** (Siege only) clears the deception in one approach and logs the true count, with unit types, for the defenders only.
+- **Levy** (Siege only) raises 2 Militia from Population, beyond the cap.
+- **Sortie** is the Knight's Raid. It can target an engine (`targetEngineUid`) and clears the deception in that approach.
+- **Emplace** (Warlord, Siege only) takes an engine card from the Warlord's siege-deck draw pile and puts it on an approach. Ranged engines aim at towers or the wall.
+- **Stratagems** (Warlord, Siege only), played from the siege-deck draw pile:
+  - **Night March** moves the strongest troops, up to 5, to an adjacent approach.
+  - **Campfires** adds +4 phantom troops to one approach.
+
+  The engine tracks an offset per approach; defenders see `max(0, actual + offset)`. Visible changes such as recruits, normal marches and casualties change the actual and the shown count together. The details are logged for the Warlord only; defenders see "Something stirs in the Warlord's camp tonight…". In the Assault, stratagem cards have no effect.
+- **The Assault reveals** the true count in every approach and logs which approaches were faked.
+- **AI:** the defender AI judges threat by apparent counts during the Siege phase, and doesn't peek at the truth. The AI Warlord storms after at most `rules.ai.maxBlockadeRounds` (2) Siege rounds, or earlier once the defenders are hungry, the towers are down or the target lane is half broken.
 
 ## Siege Phase (§10)
 - **Lanes under attack.** This is an interpretation of "attacking troop". A lane is under attack in a round if the Warlord played at least one card there, has an engine there, or has troops inside its bailey. Only troops in lanes under attack:

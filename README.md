@@ -7,7 +7,7 @@ This repository is the **first playable beta** built from the design spec in [`d
 | | |
 |---|---|
 | **Modes** | Co-op vs AI Warlord (1–4 hot-seat players split the 4 characters) · Warlord mode (a human Warlord vs 1–4 human defenders, hot-seat with privacy screens) |
-| **Rules** | Full Build Phase (build/upgrade, draft, train, move, trade, abilities, raids, harass), War Horns, and the 5-round Siege Phase with face-down planning, a simultaneous reveal, 5-step resolution, breaches, bailey fights, the Keep and victory |
+| **Rules** | Three phases (GDD v0.2): Build (build/upgrade, draft, train, move, trade, abilities, raids, harass), Siege/blockade (relief army clock, food upkeep, bombardment, repair/scout/levy/sortie, stratagem cards), and the Assault (face-down planning, simultaneous reveal, 5-step resolution, breaches, bailey fights, the Keep, victory) |
 | **Data-driven** | Cards, buildings, troops, characters, map and every tunable live in `/data/*.json`. Tuning needs no code changes. |
 | **Playtest tools** | Game log, debug panel (grant resources, jump to War Horns, reveal hidden info, undo, set seed, AI-move, export/import state), autosave and save files, log export, headless AI-vs-AI simulation |
 
@@ -65,9 +65,10 @@ The report includes the defender win rate, the average War Horns round, how many
 
 1. **Setup.** Defenders secretly place 3 Militia and the Knight. The Warlord secretly places the Main Siege Camp and 3 Footmen. Then everything is revealed.
 2. **Build rounds.** Collect income, then the team picks which character goes next. Defender troops are capped by Garrison Capacity (the Keep plus a Barracks or Garrison Hall). Militia Levy can raise townsfolk beyond the cap while the castle's Population lasts. Store Food (the Keep and Granaries): no Food comes in during the siege, the garrison eats 1 per 3 troops each siege round, and a hungry garrison fights at −1 Strength. Each character takes 2 actions, and the Warlord responds with 1 action after each character's turn. Click a slot on the board to see what you can build there.
-3. **War Horns.** The Warlord may sound them from round 4; they sound automatically after round 8. Defenders then get one final build round, and the Warlord makes no moves in it.
-4. **Siege (5 rounds).** Each character plays 1 card face down onto a lane, plus an optional character ability and hidden troop moves. The Warlord plays 3 cards. Everything is revealed at once and resolves in order: Scouting → Ranged → Engines → Melee → Recovery.
-5. **Winning.** Defenders win if the Keep stands after the last round. The Warlord wins the moment the Keep falls.
+3. **War Horns.** The Warlord may sound them from round 4; they sound automatically after round 8.
+4. **Siege (blockade).** The castle is surrounded and a relief army is 7 rounds away. No Food comes in. Each character takes 1 action a round: repair, scout, levy townsfolk, sortie, or any build action. The Warlord emplaces engines (Catapults and Trebuchets bombard every round) and can deceive with stratagem cards (Night March, Campfires). He decides when to storm; when 3 rounds remain, he must.
+5. **Assault.** Each character plays 1 card face down onto a lane, plus an optional character ability and hidden troop moves. The Warlord plays 3 cards. Everything is revealed at once, including the Warlord's true positions on the first round, and resolves in order: Scouting → Ranged → Engines → Melee → Recovery.
+6. **Winning.** Defenders win if the Keep stands when the relief army arrives. The Warlord wins the moment the Keep falls.
 
 ## Project layout
 

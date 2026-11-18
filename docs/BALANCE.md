@@ -22,6 +22,25 @@ Most drafted cards: Footmen Wave, Battering Ram, Raider Band, Burning Oil, Trebu
 
 Caveat: the defender AI plays well. It concentrates every card, troop and the Knight on the visibly threatened lane. Human players may do worse, so try a few human co-op games before drawing firm conclusions.
 
+## Update: three phases (M7) — Build → Siege (blockade) → Assault
+
+`npm run sim -- --games 100`, Normal, seeds 1–100:
+
+| | Before M7 | M7, AI waits as long as allowed | M7, AI storms within 2 Siege rounds (current) |
+|---|---|---|---|
+| Defender win rate | 99% | 100% | 99% (1 Warlord win by Keep assault) |
+| Games with a breach | 62% | 30% | 48% |
+| Avg Siege rounds | — | 3.8 (94% forced by the clock) | 2.0 |
+| Avg Assault rounds | 4.6 | 3.1 | 4.3 |
+| Avg hungry rounds per game | 0.6 | 1.5 | 1.3 |
+| Stratagems played per game | — | 0.15 | 0.33 |
+| Ended by "no troops left" | 32% | 18% | 42% |
+
+What this tells us:
+- **The relief clock works as a pressure, perhaps too well.** An AI Warlord that waits until it's forced gets only 3 Assault rounds and breaches half as often. Waiting doesn't pay yet, because hunger costs only −1 Strength and bombardment is slow. Levers: `rules.relief.rounds` (longer clock), `rules.relief.forceAssaultAt`, `rules.food.troopsPerFood` (hungrier sooner), and Catapult/Trebuchet output.
+- **Stratagems are rare in AI games** because the AI drafts few Tactics cards. Their value is best judged in human playtests: they exist to make human defenders guess wrong.
+- The overall gap remains the same structural one: defenders stack the one visibly threatened lane, and the AI Warlord's attack is small. Stratagems are now the tool that can break that stacking, so try playing the Warlord yourself in hot-seat mode.
+
 ## Update: food
 
 Normal, 100 games: defender win rate **99%** (1 Warlord win), breaches 62%, Keep HP at end 7.78 (was 7.97).

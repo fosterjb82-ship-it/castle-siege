@@ -185,8 +185,6 @@ export interface SiegeState {
   rallyActive: Partial<Record<Lane, number>>; // Lord rally from the previous round
   rallyNext: Partial<Record<Lane, number>>;
   mods: RoundMods;
-  /** The garrison couldn't be fed this round: every defender troop −1 Strength. */
-  hungry?: boolean;
 }
 
 export interface RoundMods {
@@ -206,6 +204,7 @@ export type BuildStep =
   | 'defenderTurn'
   | 'warlordTurn'
   | 'hornsDecision'
+  | 'assaultDecision'
   | 'draftPick';
 
 export interface TurnState {
@@ -223,6 +222,11 @@ export interface GameStats {
   cardsPlayed: Record<string, number>;
   drafted: Record<string, number>;
   hornsRound: number | null;
+  /** Siege (blockade) rounds played before the Assault. */
+  blockadeRounds: number;
+  hungryRounds: number;
+  stratagems: number;
+  assaultForced: boolean;
   raids: { won: number; lost: number };
 }
 
@@ -231,7 +235,8 @@ export interface GameState {
   seed: number;
   rng: number;
   config: GameConfig;
-  phase: 'setup' | 'build' | 'siege' | 'ended';
+  /** 'blockade' is the Siege phase of GDD v0.2; 'siege' is the Assault phase (kept as the internal ID). */
+  phase: 'setup' | 'build' | 'blockade' | 'siege' | 'ended';
   step: BuildStep | 'siege' | 'ended';
   setupDone: Partial<Record<Side, boolean>>;
   setupHidden: { defender?: Lane[]; warlord?: { camp: Lane; footmen: Lane[] } };
@@ -257,6 +262,15 @@ export interface GameState {
   intel: { side: Side; text: string; round: number }[];
   /** Townsfolk who can still be levied as Militia beyond the Garrison Capacity. */
   population: number;
+  /** The garrison couldn't be fed this round: every defender troop −1 Strength. */
+  hungry: boolean;
+  /** Relief army clock: starts at the War Horns; defenders win when it reaches 0 with the Keep standing. */
+  relief: { roundsLeft: number } | null;
+  /**
+   * Siege (blockade) state. Defenders see max(0, actual + offset) Warlord troops in each approach;
+   * Night March and Campfires create offsets, scouting or a sortie clears them, the Assault reveals all.
+   */
+  blockade: { round: number; offsets: Record<Lane, number>; scouted: Lane[] } | null;
   turn: TurnState;
   pendingDraft: { actor: Actor; deck: string; cards: string[] } | null;
   harassed: number[];
@@ -292,7 +306,14 @@ export type Action =
   | { type: 'trade'; actor: Actor; give: string; get: string }
   | { type: 'decree'; actor: 'lord'; resource: string }
   | { type: 'requisition'; actor: 'quartermaster'; give: string; get: string; amount: number }
-  | { type: 'raid'; actor: 'knight'; lane: Lane; troopUids: number[]; targetBuildingUid?: number }
+  | { type: 'raid'; actor: 'knight'; lane: Lane; troopUids: number[]; targetBuildingUid?: number; targetEngineUid?: number }
+  | { type: 'repair'; actor: CharacterId; lane: Lane; structure: StructureKind | 'tower'; corner?: Corner }
+  | { type: 'scout'; actor: CharacterId; lane: Lane }
+  | { type: 'levy'; actor: CharacterId; lane: Lane }
+  | { type: 'emplace'; cardId: string; lane: Lane; target?: 'gate' | 'wall' | 'tower' }
+  | { type: 'stratagem'; cardId: string; lane: Lane; to?: Lane; count?: number }
+  | { type: 'orderAssault' }
+  | { type: 'holdSiege' }
   | { type: 'harass'; lane: Lane; buildingUid?: number }
   | { type: 'endTurn'; actor: Actor }
   | { type: 'soundHorns' }
@@ -307,4 +328,5 @@ export type Action =
   | { type: 'advanceSiege' }
   // debug actions
   | { type: 'debugGrant'; side: Side; resources: Resources }
-  | { type: 'debugSkipToHorns' };
+  | { type: 'debugSkipToHorns' }
+  | { type: 'debugSkipToAssault' };

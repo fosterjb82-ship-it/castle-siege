@@ -10,6 +10,7 @@ import {
   incomeFor, addRes, fmtRes, garrisonRoom, foodUpkeep,
 } from './util';
 
+
 const NAME = (a: Actor) => (a === 'warlord' ? 'Warlord' : CHARACTER_DEFS[a].name);
 const ACTORS: Actor[] = [...CHARACTERS, 'warlord'];
 
@@ -28,18 +29,27 @@ function drawTo(s: GameState, a: Actor, n: number) {
   while (s.hands[a].length < n && s.siegeDecks[a].length) s.hands[a].push(s.siegeDecks[a].shift()!);
 }
 
+/** Begin the Assault phase (internal phase 'siege'). Hidden Warlord positions are revealed. */
 export function startSiege(s: GameState) {
+  if (s.blockade) {
+    const fake = LANES.filter((l) => (s.blockade!.offsets[l] ?? 0) !== 0);
+    s.stats.blockadeRounds = s.blockade.round;
+    log(s, `══════ THE ASSAULT BEGINS ══════`, 'all', 'round');
+    log(s, `Dawn reveals the Warlord's true positions: ${LANES.map((l) => `${laneName(l)} ${troopsAt(s, 'warlord', l, 'approach').length}`).join(', ')}${fake.length ? ` — the defenders were deceived in the ${fake.map(laneName).join(' and ')} approach${fake.length > 1 ? 'es' : ''}!` : '.'}`, 'all', 'horns');
+    for (const l of LANES) s.blockade.offsets[l] = 0;
+  } else {
+    log(s, '══════ THE ASSAULT BEGINS ══════', 'all', 'round');
+  }
   s.phase = 'siege';
   s.step = 'siege';
   s.siegeRound = 0;
-  log(s, '══════ THE SIEGE BEGINS ══════', 'all', 'round');
   for (const a of ACTORS) {
     shuffle(s, s.siegeDecks[a]);
     drawTo(s, a, handSize(s, a));
   }
   s.siege = {
     stage: 'plan', planned: [], plays: [], moves: [], abilities: {}, nextStep: 0,
-    rallyActive: {}, rallyNext: {}, mods: emptyMods(), hungry: false,
+    rallyActive: {}, rallyNext: {}, mods: emptyMods(),
   };
   beginSiegeRound(s);
 }
@@ -47,7 +57,7 @@ export function startSiege(s: GameState) {
 function beginSiegeRound(s: GameState) {
   const sg = s.siege!;
   s.siegeRound += 1;
-  log(s, `══ Siege round ${s.siegeRound} of ${RULES.siegeRounds} ══`, 'all', 'round');
+  log(s, `══ Assault round ${s.siegeRound} · relief army ${s.relief ? `${s.relief.roundsLeft} round(s) away` : 'not coming'} ══`, 'all', 'round');
   for (const side of ['defender', 'warlord'] as const) {
     const inc = incomeFor(s, side);
     addRes(s.stock[side], inc);
@@ -68,18 +78,18 @@ function beginSiegeRound(s: GameState) {
   sg.mods = emptyMods();
 }
 
-/** Start of each siege round: the garrison eats from the stores. Short on food → hungry this round. */
-function feedGarrison(s: GameState) {
-  const sg = s.siege!;
+/** Start of each Siege and Assault round: the garrison eats from the stores. Short on food → hungry this round. */
+export function feedGarrison(s: GameState) {
   const need = foodUpkeep(s);
   const have = s.stock.defender.food ?? 0;
   if (have >= need) {
     s.stock.defender.food = have - need;
-    sg.hungry = false;
+    s.hungry = false;
     if (need) log(s, `🍞 The garrison eats ${need} Food (${s.stock.defender.food} left in the stores).`);
   } else {
     s.stock.defender.food = 0;
-    sg.hungry = true;
+    s.hungry = true;
+    s.stats.hungryRounds++;
     log(s, `🥣 HUNGER! The stores can't feed the garrison (${have} of ${need} Food) — every defender troop has −${RULES.food.hungerStrengthPenalty} Strength this round.`, 'all', 'breach');
   }
 }
@@ -398,7 +408,7 @@ function structDefense(s: GameState, lane: Lane, kind: StructureKind): number {
   return Math.max(0, base - debuff);
 }
 
-function damageStructure(s: GameState, lane: Lane, kind: StructureKind, amount: number, source: string) {
+export function damageStructure(s: GameState, lane: Lane, kind: StructureKind, amount: number, source: string) {
   const st = struct(s, lane, kind);
   if (amount <= 0 || st.hp <= 0) return;
   let left = amount;
@@ -409,13 +419,13 @@ function damageStructure(s: GameState, lane: Lane, kind: StructureKind, amount: 
   log(s, `${source}: ${amount} damage to the ${laneName(lane)} ${kind}${absorbed ? ` (${absorbed} absorbed by barricades)` : ''} → ${st.hp}/${st.maxHp}.`);
 }
 
-function checkBreaches(s: GameState) {
+export function checkBreaches(s: GameState) {
   for (const l of LANES) {
     if (!s.breached[l] && (s.walls[l].hp <= 0 || s.gates[l].hp <= 0)) {
       s.breached[l] = true;
       const what = s.gates[l].hp <= 0 ? 'gate' : 'wall';
-      log(s, `💥 BREACH! The ${laneName(l)} ${what} has fallen. Warlord troops may enter the ${laneName(l)} bailey next round.`, 'all', 'breach');
-      const b = { lane: l, siegeRound: s.siegeRound };
+      log(s, `💥 BREACH! The ${laneName(l)} ${what} has fallen. Warlord troops may enter the ${laneName(l)} bailey ${s.phase === 'blockade' ? 'once the Assault begins' : 'next round'}.`, 'all', 'breach');
+      const b = { lane: l, siegeRound: s.phase === 'blockade' ? 0 : s.siegeRound };
       s.stats.breaches.push(b);
       s.stats.firstBreach ??= b;
     }
@@ -492,12 +502,6 @@ function stepRanged(s: GameState) {
     if (sideOf(p.actor) === 'defender') shots.push({ lane: p.lane, points: e.amount + bonus(p.lane), source: card(p.cardId).name, at: 'warlordApproach' });
     else shots.push({ lane: p.lane, points: e.amount, source: card(p.cardId).name, at: 'defender' });
   }
-  // Ranged engines (Trebuchets, Catapults) fire this step.
-  const trebShots: { lane: Lane; amount: number; towerAmount: number; target: string; name: string }[] = [];
-  for (const en of s.engines) {
-    const e = card(en.cardId).effects.find((x) => x.type === 'engine');
-    if (e?.ranged) trebShots.push({ lane: en.lane, amount: e.attack, towerAmount: e.towerAttack ?? e.attack, target: en.target, name: card(en.cardId).name });
-  }
   // Burning oil destroys engines (simultaneous with trebuchet fire).
   const oil: Lane[] = [];
   for (const p of plays) for (const e of card(p.cardId).effects) if (e.type === 'destroyEngine') for (let i = 0; i < e.count; i++) oil.push(p.lane);
@@ -507,26 +511,35 @@ function stepRanged(s: GameState) {
       : () => warlordTargets(s, sh.lane, sh.at === 'warlordApproach');
     dealDamage(s, get, sh.points, sh.source);
   }
-  for (const t of trebShots) {
-    if (t.target === 'tower') {
-      // Focus fire: the most damaged tower covering the lane.
-      const corner = cornersCovering(t.lane).filter((c) => s.towers[c]).sort((a, b) => s.towers[a]!.hp - s.towers[b]!.hp)[0];
-      if (corner) {
-        const tw = s.towers[corner]!;
-        tw.hp -= t.towerAmount;
-        log(s, `${t.name}: ${t.towerAmount} damage to the ${corner} ${building(tw.buildingId).name} → ${Math.max(0, tw.hp)}/${tw.maxHp}.`);
-        if (tw.hp <= 0) { s.towers[corner] = null; log(s, `💥 The ${corner} tower collapses!`); }
-        continue;
-      }
-    }
-    if (!s.breached[t.lane]) damageStructure(s, t.lane, 'wall', t.amount, t.name);
-  }
+  fireRangedEngines(s);
   for (const lane of oil) {
     const target = s.engines.filter((e) => e.lane === lane).sort((a, b) => engineAttack(b) - engineAttack(a))[0];
     if (target) {
       s.engines = s.engines.filter((e) => e.uid !== target.uid);
       log(s, `🔥 Burning Oil destroys a ${card(target.cardId).name} in the ${laneName(lane)} lane!`);
     } else log(s, `Burning Oil in the ${laneName(lane)} lane finds no engine.`);
+  }
+}
+
+/** Catapults and Trebuchets on the board fire: at the towers covering their lane, or at the wall. */
+export function fireRangedEngines(s: GameState) {
+  for (const en of [...s.engines]) {
+    const e = card(en.cardId).effects.find((x) => x.type === 'engine');
+    if (!e?.ranged) continue;
+    const name = card(en.cardId).name;
+    const towerAmount = e.towerAttack ?? e.attack;
+    if (en.target === 'tower') {
+      // Focus fire: the most damaged tower covering the lane.
+      const corner = cornersCovering(en.lane).filter((c) => s.towers[c]).sort((a, b) => s.towers[a]!.hp - s.towers[b]!.hp)[0];
+      if (corner) {
+        const tw = s.towers[corner]!;
+        tw.hp -= towerAmount;
+        log(s, `${name}: ${towerAmount} damage to the ${corner} ${building(tw.buildingId).name} → ${Math.max(0, tw.hp)}/${tw.maxHp}.`);
+        if (tw.hp <= 0) { s.towers[corner] = null; log(s, `💥 The ${corner} tower collapses!`); }
+        continue;
+      }
+    }
+    if (!s.breached[en.lane]) damageStructure(s, en.lane, 'wall', e.attack, name);
   }
 }
 
@@ -752,6 +765,7 @@ function stepRecovery(s: GameState) {
 
 function endSiegeRound(s: GameState) {
   for (const l of LANES) { s.walls[l].tempHp = 0; s.gates[l].tempHp = 0; }
+  if (s.relief) s.relief.roundsLeft -= 1;
   checkVictory(s, true);
   if (s.winner) return;
   for (const a of ACTORS) drawTo(s, a, handSize(s, a));
@@ -769,8 +783,8 @@ export function checkVictory(s: GameState, endOfRound: boolean) {
   if (s.keep.hp <= 0) return endGame(s, 'warlord', 'The Keep has fallen and the Lord with it.');
   if (s.phase === 'siege' && !warlordHasTroopsLeft(s))
     return endGame(s, 'defender', 'The Warlord has no troops left to throw at the walls.');
-  if (endOfRound && s.siegeRound >= RULES.siegeRounds)
-    return endGame(s, 'defender', `The Keep held through all ${RULES.siegeRounds} siege rounds.`);
+  if (endOfRound && (s.relief?.roundsLeft ?? 0) <= 0)
+    return endGame(s, 'defender', 'The relief army arrives and the Warlord\'s host breaks — the Keep held!');
 }
 
 function endGame(s: GameState, winner: 'defender' | 'warlord', reason: string) {

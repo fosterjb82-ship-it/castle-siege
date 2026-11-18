@@ -1,6 +1,7 @@
 import * as B from './build';
 import { BUILDINGS, MAP, RULES, TROOPS } from './data';
 import * as S from './siege';
+import * as K from './blockade';
 import type { Action, Actor, CharacterId, GameState, Lane, SlotRef } from './types';
 import { CHARACTERS, CORNERS, DEFENDER_RES, LANES, WARLORD_RES } from './types';
 import { GameError, addRes, canAfford, clone, defendersIn, fail, hasBuilding, log, sideOf, troopsAt } from './util';
@@ -35,6 +36,14 @@ export function applyAction(state: GameState, action: Action): GameState {
       log(s, `[debug] Granted resources to ${action.side}.`);
       break;
     case 'debugSkipToHorns': B.debugSkipToHorns(s); break;
+    case 'debugSkipToAssault': K.debugSkipToAssault(s); break;
+    case 'repair': K.doRepair(s, action); break;
+    case 'scout': K.doScout(s, action); break;
+    case 'levy': K.doLevy(s, action); break;
+    case 'emplace': K.doEmplace(s, action); break;
+    case 'stratagem': K.doStratagem(s, action); break;
+    case 'orderAssault': K.doAssaultDecision(s, true); break;
+    case 'holdSiege': K.doAssaultDecision(s, false); break;
     default: fail(`Unknown action ${(action as any).type}`);
   }
   return s;
@@ -67,7 +76,8 @@ export function pendingActors(s: GameState): Actor[] {
     case 'defenderTurn': return [s.turn.current!];
     case 'draftPick': return [s.pendingDraft!.actor];
     case 'warlordTurn':
-    case 'hornsDecision': return ['warlord'];
+    case 'hornsDecision':
+    case 'assaultDecision': return ['warlord'];
     case 'siege': {
       const sg = s.siege!;
       if (sg.stage === 'plan') return ([...CHARACTERS, 'warlord'] as Actor[]).filter((a) => !sg.planned.includes(a));
@@ -119,6 +129,7 @@ export function legalBuildActions(s: GameState, actor: Actor): Action[] {
     return out;
   }
   if (s.step === 'hornsDecision' && actor === 'warlord') return [{ type: 'soundHorns' }, { type: 'holdHorns' }];
+  if (s.step === 'assaultDecision' && actor === 'warlord') return [{ type: 'orderAssault' }, { type: 'holdSiege' }];
   const side = sideOf(actor);
   for (const slot of allSlots(side)) out.push(...legalBuildsForSlot(s, actor, slot));
   for (const deck of Object.keys((RULES.draftCosts as any)[side])) push({ type: 'draft', actor, deck });
@@ -132,6 +143,13 @@ export function legalBuildActions(s: GameState, actor: Actor): Action[] {
       for (const to of MAP.adjacency[from]) push({ type: 'march', from, to, troopUids: here.slice(0, RULES.marchMaxTroops).map((t) => t.uid) });
     }
     for (const l of LANES) push({ type: 'harass', lane: l });
+    if (s.phase === 'blockade') {
+      for (const id of new Set(s.siegeDecks.warlord)) for (const l of LANES) {
+        push({ type: 'emplace', cardId: id, lane: l });
+        push({ type: 'stratagem', cardId: id, lane: l });
+        for (const to of MAP.adjacency[l]) push({ type: 'stratagem', cardId: id, lane: l, to });
+      }
+    }
   } else {
     const c = actor as CharacterId;
     for (const t of Object.values(TROOPS)) if (t.side === 'defender') for (const l of LANES) push({ type: 'train', actor: c, troop: t.id, lane: l });
@@ -148,6 +166,13 @@ export function legalBuildActions(s: GameState, actor: Actor): Action[] {
     if (c === 'knight') for (const l of LANES) {
       const party = defendersIn(s, l).slice(0, RULES.raid.maxTroops).map((t) => t.uid);
       push({ type: 'raid', actor: 'knight', lane: l, troopUids: party });
+      for (const e of s.engines.filter((x) => x.lane === l)) push({ type: 'raid', actor: 'knight', lane: l, troopUids: party, targetEngineUid: e.uid });
+    }
+    for (const l of LANES) {
+      push({ type: 'repair', actor: c, lane: l, structure: 'wall' });
+      push({ type: 'repair', actor: c, lane: l, structure: 'gate' });
+      push({ type: 'repair', actor: c, lane: l, structure: 'tower' });
+      if (s.phase === 'blockade') { push({ type: 'scout', actor: c, lane: l }); push({ type: 'levy', actor: c, lane: l }); }
     }
   }
   out.push({ type: 'endTurn', actor });

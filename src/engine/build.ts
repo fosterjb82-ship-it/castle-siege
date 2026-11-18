@@ -1,5 +1,5 @@
 import { CHARACTER_DEFS, MAP, RULES, building, card, laneName, troopDef } from './data';
-import { startSiege } from './siege';
+import { endBlockadeRound, startBlockade } from './blockade';
 import type { Action, Actor, CharacterId, GameState, Lane, Resources, Side, SlotRef } from './types';
 import { CHARACTERS, DEFENDER_RES, LANES, WARLORD_RES } from './types';
 import {
@@ -65,7 +65,7 @@ export function collect(s: GameState) {
 
 export function startRound(s: GameState) {
   s.round += 1;
-  log(s, `══ Build round ${s.round}${s.finalBuildRound ? ' (final build round — the Warlord makes no moves)' : ''} ══`, 'all', 'round');
+  log(s, `══ Build round ${s.round} ══`, 'all', 'round');
   collect(s);
   s.turn = { done: [], current: null, actionsLeft: 0, warlordActionsLeft: 0, abilityUsed: {}, returnStep: null };
   s.step = 'chooseCharacter';
@@ -76,7 +76,7 @@ export function chooseCharacter(s: GameState, c: CharacterId) {
   if (!CHARACTERS.includes(c)) fail('Unknown character');
   if (s.turn.done.includes(c)) fail(`${CHARACTER_DEFS[c].name} already acted this round`);
   s.turn.current = c;
-  s.turn.actionsLeft = RULES.defenderActionsPerTurn;
+  s.turn.actionsLeft = s.phase === 'blockade' ? RULES.blockade.defenderActions : RULES.defenderActionsPerTurn;
   s.step = 'defenderTurn';
   log(s, `— ${CHARACTER_DEFS[c].name}'s turn —`, 'all', 'turn');
 }
@@ -86,8 +86,7 @@ function endDefenderTurn(s: GameState) {
   s.turn.done.push(c);
   s.turn.current = null;
   s.turn.actionsLeft = 0;
-  if (s.finalBuildRound) return afterWarlordTurn(s);
-  s.turn.warlordActionsLeft = RULES.warlordActionsPerDefenderTurn;
+  s.turn.warlordActionsLeft = s.phase === 'blockade' ? RULES.blockade.warlordActionsPerDefenderTurn : RULES.warlordActionsPerDefenderTurn;
   s.step = 'warlordTurn';
 }
 
@@ -103,7 +102,7 @@ function afterWarlordTurn(s: GameState) {
 function endRound(s: GameState) {
   if (overSupplied(s))
     log(s, `Supply check: ${warlordTroopCount(s)} troops exceed Supply Rating ${supplyRating(s)} — every Warlord troop has −1 Strength.`);
-  if (s.finalBuildRound) return startSiege(s);
+  if (s.phase === 'blockade') return endBlockadeRound(s);
   if (s.round >= RULES.warHorns.latestRound) {
     log(s, 'The Warlord can wait no longer.');
     return soundHorns(s);
@@ -116,11 +115,7 @@ function endRound(s: GameState) {
 }
 
 export function soundHorns(s: GameState) {
-  s.hornsSounded = true;
-  s.finalBuildRound = true;
-  s.stats.hornsRound = s.round;
-  log(s, `📯 WAR HORNS! The Warlord sounds the attack after round ${s.round}. Defenders get one final build round.`, 'all', 'horns');
-  startRound(s);
+  startBlockade(s);
 }
 
 export function consumeAction(s: GameState, actor: Actor) {
@@ -134,7 +129,7 @@ export function consumeAction(s: GameState, actor: Actor) {
 }
 
 export function assertActor(s: GameState, actor: Actor) {
-  if (s.phase !== 'build') fail('Only during the Build Phase');
+  if (s.phase !== 'build' && s.phase !== 'blockade') fail('Only during the Build or Siege phase');
   if (actor === 'warlord') {
     if (s.step !== 'warlordTurn') fail("It's not the Warlord's turn");
   } else {
@@ -384,6 +379,7 @@ export function doTrade(s: GameState, a: Extract<Action, { type: 'trade' }>) {
   const side = sideOf(a.actor);
   const list = resList(side);
   if (!list.includes(a.give) || !list.includes(a.get) || a.give === a.get) fail('Invalid trade');
+  if (side === 'defender' && s.phase !== 'build' && a.get === 'food') fail('The fields are cut off: no action can produce Food during the siege');
   pay(s.stock[side], { [a.give]: RULES.tradeRate }, 'trade');
   addRes(s.stock[side], { [a.get]: 1 });
   log(s, `${ACTOR_NAME(a.actor)} trades ${RULES.tradeRate} ${cap(a.give)} for 1 ${cap(a.get)}.`);
@@ -399,6 +395,7 @@ function useAbility(s: GameState, c: CharacterId, ability: string) {
 export function doDecree(s: GameState, a: Extract<Action, { type: 'decree' }>) {
   assertActor(s, a.actor);
   if (!DEFENDER_RES.includes(a.resource as any)) fail('Invalid resource');
+  if (s.phase !== 'build' && a.resource === 'food') fail(NO_FOOD);
   useAbility(s, 'lord', 'decree');
   addRes(s.stock.defender, { [a.resource]: RULES.decreeAmount });
   log(s, `Lord's Decree: +${RULES.decreeAmount} ${cap(a.resource)}.`);
@@ -409,6 +406,7 @@ export function doRequisition(s: GameState, a: Extract<Action, { type: 'requisit
   assertActor(s, a.actor);
   if (!DEFENDER_RES.includes(a.give as any) || !DEFENDER_RES.includes(a.get as any) || a.give === a.get) fail('Invalid requisition');
   if (a.amount < 1 || a.amount > RULES.requisitionMax) fail(`Requisition 1–${RULES.requisitionMax}`);
+  if (s.phase !== 'build' && a.get === 'food') fail('The fields are cut off: no action can produce Food during the siege');
   if (!canAfford(s.stock.defender, { [a.give]: a.amount })) fail('Not enough resources');
   useAbility(s, 'quartermaster', 'requisition');
   pay(s.stock.defender, { [a.give]: a.amount });
@@ -416,6 +414,8 @@ export function doRequisition(s: GameState, a: Extract<Action, { type: 'requisit
   log(s, `Quartermaster requisitions ${a.amount} ${cap(a.give)} → ${a.amount} ${cap(a.get)}.`);
   consumeAction(s, 'quartermaster');
 }
+
+const NO_FOOD = 'The fields are cut off: no action can produce Food during the siege';
 
 // ---------------- Raid & Harass ----------------
 
@@ -432,14 +432,19 @@ export function doRaid(s: GameState, a: Extract<Action, { type: 'raid' }>) {
   const enemies = troopsAt(s, 'warlord', a.lane, 'approach');
   const guards = s.approaches[a.lane].filter(Boolean).length * (RULES.raid.guardPerBuilding ?? 0);
   const enemyStr = sumStrength(s, enemies) + guards;
-  log(s, `⚔ The Knight raids the ${laneName(a.lane)} approach with ${party.length} troop(s): Strength ${raidStr} vs ${enemyStr}${guards ? ` (incl. ${guards} camp guards)` : ''}.`);
+  if (s.blockade) s.blockade.offsets[a.lane] = 0; // a sortie sees the camp for what it is
+  log(s, `⚔ The Knight ${s.phase === 'blockade' ? 'sorties into' : 'raids'} the ${laneName(a.lane)} approach with ${party.length} troop(s): Strength ${raidStr} vs ${enemyStr}${guards ? ` (incl. ${guards} camp guards)` : ''}.`);
   if (raidStr > enemyStr) {
     s.stats.raids.won++;
     const targets = s.approaches[a.lane]
       .map((b, i) => ({ b, i }))
       .filter((x) => x.b && !building(x.b.buildingId).indestructible);
+    const engine = a.targetEngineUid !== undefined ? s.engines.find((e) => e.uid === a.targetEngineUid && e.lane === a.lane) : undefined;
     const chosen = targets.find((x) => x.b!.uid === a.targetBuildingUid) ?? targets[0];
-    if (chosen) {
+    if (engine) {
+      s.engines = s.engines.filter((e) => e.uid !== engine.uid);
+      log(s, `Sortie succeeds! The ${card(engine.cardId).name} is set ablaze.`);
+    } else if (chosen) {
       log(s, `Raid succeeds! ${building(chosen.b!.buildingId).name} is burned.`);
       s.approaches[a.lane][chosen.i] = null;
     } else log(s, 'Raid succeeds, but there is nothing to burn.');
@@ -481,7 +486,6 @@ export function doHornsDecision(s: GameState, sound: boolean) {
 
 export function debugSkipToHorns(s: GameState) {
   if (s.phase !== 'build') fail('Only during the Build Phase');
-  if (s.hornsSounded) fail('Horns already sounded');
   log(s, '[debug] Jumping to the War Horns.');
   soundHorns(s);
 }

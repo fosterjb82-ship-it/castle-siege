@@ -1,7 +1,7 @@
 import type { GameState, Lane } from '../types';
 import { LANES } from '../types';
 import { building, card } from '../data';
-import { baileyStrength, cornersCovering, laneBuildingAttack, mainCampLane, sumStrength, towerDefense, troopsAt } from '../util';
+import { apparentWarlordCount, baileyStrength, cornersCovering, laneBuildingAttack, mainCampLane, sumStrength, towerDefense, troopsAt } from '../util';
 
 /** Deterministic local RNG for AI choices, derived from the state without mutating it. */
 export function aiRng(s: GameState, salt = 0) {
@@ -48,7 +48,10 @@ export function warlordTargetLane(s: GameState): Lane {
 
 /** Visible threat to a lane, from the defenders' point of view. */
 export function laneThreat(s: GameState, lane: Lane): number {
-  const inApproach = sumStrength(s, troopsAt(s, 'warlord', lane, 'approach'));
+  // Defenders judge by what they can see: during the Siege phase, stratagems can fool them.
+  const real = troopsAt(s, 'warlord', lane, 'approach');
+  const avg = real.length ? sumStrength(s, real) / real.length : 1.3;
+  const inApproach = s.phase === 'blockade' ? apparentWarlordCount(s, lane) * avg : sumStrength(s, real);
   const inBailey = sumStrength(s, troopsAt(s, 'warlord', lane, 'bailey'));
   const engines = s.engines.filter((e) => e.lane === lane)
     .reduce((a, e) => a + (card(e.cardId).effects.find((x) => x.type === 'engine')?.attack ?? 0), 0);

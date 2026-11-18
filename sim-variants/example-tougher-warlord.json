@@ -1,5 +1,27 @@
 {
-  "rules": { "siegeRounds": 6, "warlordCardsPerRound": 4, "handSize": { "warlord": 6 } },
-  "troops": { "footmen": { "hp": 2 }, "raiders": { "hp": 2 } },
-  "buildings": { "arrow_tower": { "cost": { "stone": 3, "wood": 2 } } }
+  "rules": {
+    "relief": {
+      "rounds": 8
+    },
+    "warlordCardsPerRound": 4,
+    "handSize": {
+      "warlord": 6
+    }
+  },
+  "troops": {
+    "footmen": {
+      "hp": 2
+    },
+    "raiders": {
+      "hp": 2
+    }
+  },
+  "buildings": {
+    "arrow_tower": {
+      "cost": {
+        "stone": 3,
+        "wood": 2
+      }
+    }
+  }
 }
